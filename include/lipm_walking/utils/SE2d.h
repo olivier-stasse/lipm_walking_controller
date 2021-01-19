@@ -52,6 +52,18 @@ struct SE2d
    */
   SE2d(double x = 0., double y = 0., double theta = 0.) : x(x), y(y), theta(theta) {}
 
+   /** Initialize a new SE2 transform.
+   *
+   * \param pose Pose in world
+   *
+   */
+  SE2d(const sva::PTransformd & pose)
+  {
+    x = pose.translation().x();
+    y = pose.translation().y();
+    theta = mc_rbdyn::rpyFromMat(pose.rotation()).z();
+  }
+
   /** Apply SE2 transform in horizontal plane of an SE3 frame.
    *
    * \param X_0_a Plucker transform of SE3 frame.
