@@ -49,6 +49,7 @@ void states::Standing::start()
   lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
   leftFootRatio_ = ctl.leftFootRatio();
   startWalking_ = ctl.config()("autoplay", false);
+  ctl.isWalking = false;
   if(supportContact.surfaceName == "RightFootCenter")
   {
     leftFootContact_ = targetContact;
@@ -211,6 +212,7 @@ bool states::Standing::checkTransitions()
   {
     ctl.nextDoubleSupportDuration(ctl.plan.initDSPDuration());
     ctl.startLogSegment(ctl.plan.name);
+    ctl.isWalking = true;
     output("DoubleSupport");
     return true;
   }

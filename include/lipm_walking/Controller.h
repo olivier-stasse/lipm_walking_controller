@@ -315,6 +315,7 @@ public: /* visible to FSM states */
 
   std::shared_ptr<mc_tasks::SurfaceTransformTask> swingFootTaskLeft_;
   std::shared_ptr<mc_tasks::SurfaceTransformTask> swingFootTaskRight_;
+  bool isWalking = false;
 
 private: /* hidden from FSM states */
   std::shared_ptr<mc_tasks::lipm_stabilizer::StabilizerTask> stabilizer_;
