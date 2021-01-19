@@ -52,12 +52,51 @@ void states::DoubleSupport::start()
     timeSinceLastPreviewUpdate_ = 0.;
   }
 
+  if(ctl.plan.name == "external")
+  {
+    if(controller().datastore().has("Plugin::FSP::Plan"))
+    {
+      //Recive the external footstep plan via mc_datastore.
+      
+      ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
+      const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
+      const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
+      LOG_INFO("Current LeftFootCenter: " << X_0_lf.translation().transpose())
+      LOG_INFO("Current RightFootCenter: " << X_0_rf.translation().transpose())
+      ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
+      ctl.plan.rewind();
+      controller().datastore().remove("Plugin::FSP::Plan");
+      LOG_ERROR("Standing::Update::FootStepPlan")
+    }
+    /*
+    if(ros::param::has("online_footstep_plan"))
+    {
+      ros::param::get("online_footstep_plan", ctl.planInterpolator.online);
+    }
+    ROS_ERROR("get param");
+    */
+    if(ctl.planInterpolator.online)
+    {
+      controller().datastore().remove("Plugin::FSP::Request");
+      controller().datastore().make<bool>("Plugin::FSP::Request", true);
+    }
+    else
+    {
+      controller().datastore().remove("Plugin::FSP::Request");
+      controller().datastore().make<bool>("Plugin::FSP::Request", false);
+    }
+  }
+
+  LOG_ERROR("Support: " << ctl.supportContact().id << " " << ctl.supportContact().surfaceName)
+  LOG_ERROR("Target: " << ctl.targetContact().id << " " << ctl.targetContact().surfaceName)
+
   const std::string & targetSurfaceName = ctl.targetContact().surfaceName;
   auto actualTargetPose = ctl.controlRobot().surfacePose(targetSurfaceName);
   ctl.plan.goToNextFootstep(actualTargetPose);
+
   if(ctl.isLastDSP()) // called after goToNextFootstep
   {
-    stopDuringThisDSP_ = true;
+    stopDuringThisDSP_ = true; //TODO: We have to comment out this line to walk permanently. Or set some condition to stop/restart walking.
   }
 
   if(ctl.prevContact().surfaceName == "LeftFootCenter")

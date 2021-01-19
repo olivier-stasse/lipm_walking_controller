@@ -178,6 +178,23 @@ void states::Standing::runState()
 void states::Standing::checkPlanUpdates()
 {
   auto & ctl = controller();
+
+  if(ctl.plan.name == "external")
+  {
+    if(controller().datastore().has("Plugin::FSP::Plan"))
+    {
+      ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
+      const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
+      const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
+      LOG_INFO("Current LeftFootCenter: " << X_0_lf.translation().transpose())
+      LOG_INFO("Current RightFootCenter: " << X_0_rf.translation().transpose())
+      ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
+      ctl.plan.rewind();
+      controller().datastore().remove("Plugin::FSP::Plan");
+      LOG_ERROR("Standing::Update::FootStepPlan")
+    }
+  }
+
   if(ctl.planInterpolator.nbIter > lastInterpolatorIter_)
   {
     ctl.loadFootstepPlan(ctl.planInterpolator.customPlanName());

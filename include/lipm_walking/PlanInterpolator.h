@@ -318,6 +318,8 @@ private:
 public:
   bool isShown = false; /**< Is the footstep interpolator tab displayed? */
   unsigned nbIter = 0; /**< Number of times the interpolator was called */
+  bool online = true; // Tsuru added. It is used for online footstep replanning.
+  bool goal_online_update = true; // Tsuru added. It is used for online goal updating.
 
 private:
   FootstepPlan customPlan_;

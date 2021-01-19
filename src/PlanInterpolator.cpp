@@ -61,6 +61,14 @@ void PlanInterpolator::addGUIElements()
               [this](const Eigen::VectorXd & desired) { updateWorldTarget_(desired.head<3>()); }));
 
   gui_->addElement(
+    {"Walking", "Online"},
+    Button("Toggle replan", [this](){ online = ! online; }),
+    Label("Will replan online?:", [this](){ return (online ? "yes" : "no"); }),
+    Button("Toggle goal update online", [this](){ goal_online_update = ! goal_online_update; }),
+    Label("Will update the goal online?:", [this](){ return (goal_online_update ? "yes" : "no"); })
+  );
+
+  gui_->addElement(
       {"Walking", "Footsteps"}, Label("Plan name", [this]() { return customPlan_.name; }),
       ComboInput("Gait", {"Walk", "Shuffle", "Turn"}, [this]() { return gait(); },
                  [this](const std::string & dir) { gait(dir); }),
@@ -167,7 +175,7 @@ void PlanInterpolator::suggestGait()
 void PlanInterpolator::configure(const mc_rtc::Configuration & plans)
 {
   plans_ = plans;
-  for(auto name : {"custom_backward", "custom_forward", "custom_lateral"})
+  for(auto name : {"custom_backward", "custom_forward", "custom_lateral", "external"})
   {
     if(!plans_.has(name))
     {
@@ -197,7 +205,22 @@ void PlanInterpolator::configure(const mc_rtc::Configuration & plans)
 
 void PlanInterpolator::run()
 {
-  if(targetPose_.pos().norm() < 2e-3)
+  if(online)
+  {
+     if(gait_ == Gait::Walk)
+    {
+      runWalking_();
+    }
+     else if(gait_ == Gait::Shuffle)
+    {
+      runShuffling_();
+    }
+    else // (gait_ == Gait::Turn)
+    {
+      runTurning_();
+    }
+  }
+  else if(targetPose_.pos().norm() < 2e-3)
   {
     if(gait_ != Gait::Turn)
     {
