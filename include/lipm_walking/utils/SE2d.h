@@ -52,7 +52,7 @@ struct SE2d
    */
   SE2d(double x = 0., double y = 0., double theta = 0.) : x(x), y(y), theta(theta) {}
 
-   /** Initialize a new SE2 transform.
+  /** Initialize a new SE2 transform.
    *
    * \param pose Pose in world
    *

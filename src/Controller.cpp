@@ -390,50 +390,12 @@ void Controller::setContacts(
   }
 }
 
-void Controller::internalReset()
-{
-  // FIXME:
-  // - resets does not respect the foot plan position when pausing walking (feet come back align
-  // dragging on the floor)
-  // - Do we still need the posture tricks?
-
-  // (1) update floating-base transforms of both robot mbc's
-  auto X_0_fb = supportContact().robotTransform(controlRobot());
-  controlRobot().posW(X_0_fb);
-  controlRobot().velW(sva::MotionVecd::Zero());
-  realRobot().posW(X_0_fb);
-  realRobot().velW(sva::MotionVecd::Zero());
-
-  // (2) update contact frames to coincide with surface ones
-  loadFootstepPlan(plan.name);
-
-  // (3) reset solver tasks
-  postureTask->posture(halfSitPose);
-
-  // (4) reset controller attributes
-  leftFootRatioJumped_ = true;
-  leftFootRatio_ = 0.5;
-  nbMPCFailures_ = 0;
-  pauseWalking = false;
-  pauseWalkingRequested = false;
-
-  // XXX Default height is the same as that defined hidden in Stephan's
-  // Pendulum::reset() function. This should probably be ready from config
-  // or use the robot height above ground instead.
-  constexpr double DEFAULT_HEIGHT = 0.8; // [m]
-  double lambda = mc_rtc::constants::GRAVITY / DEFAULT_HEIGHT;
-  pendulum_.reset(lambda, controlRobot().com());
-
-  stopLogSegment();
-}
-
 void Controller::leftFootRatio(double ratio)
 {
   double maxRatioVar = 1.5 * timeStep / plan.doubleSupportDuration();
   if(std::abs(ratio - leftFootRatio_) > maxRatioVar)
   {
     mc_rtc::log::warning("Left foot ratio jumped from {} to {}", leftFootRatio_, ratio);
-    leftFootRatioJumped_ = true;
   }
   leftFootRatio_ = clamp(ratio, 0., 1., "leftFootRatio");
 }
@@ -472,10 +434,10 @@ bool Controller::run()
   warnIfRobotIsInTheAir();
 
   bool ret = mc_control::fsm::Controller::run();
-  if(mc_control::fsm::Controller::running())
-  {
-    postureTask->posture(halfSitPose); // reset posture in case the FSM updated it
-  }
+  // if(mc_control::fsm::Controller::running())
+  //{
+  //  postureTask->posture(halfSitPose); // reset posture in case the FSM updated it
+  //}
   return ret;
 }
 

@@ -47,6 +47,8 @@ namespace states
  */
 struct Initial : State
 {
+  void configure(const mc_rtc::Configuration & config) override;
+
   /** Start state.
    *
    */
@@ -77,11 +79,27 @@ struct Initial : State
    */
   void hideStartStandingButton();
 
+protected:
+  /** Reset robot to its initial (half-sitting) configuration.
+   *
+   * The reason why I do it inside the controller rather than via the current
+   * mc_rtc way (switching to half_sitting controller then back to this one)
+   * is <https://gite.lirmm.fr/multi-contact/mc_rtc/issues/54>.
+   */
+  void internalReset();
+
 private:
   bool postureTaskIsActive_; /**< Is the posture task active? */
   bool postureTaskWasActive_; /**< Was the posture task active at previous run()? */
   bool startStandingButton_; /**< Is the "Start standing" button displayed in the GUI? */
   bool startStanding_; /**< Has the user clicked on "Start standing"? */
+
+  /// @{ config
+  bool resetFloatingBaseToPlan_ = true;
+  bool updateContactFramesToCurrentSurface_ = true;
+  bool resetPosture_ = true;
+  bool resetPendulumHeight_ = true;
+  /// @}
 };
 
 } // namespace states
