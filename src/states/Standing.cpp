@@ -39,6 +39,12 @@ namespace
 constexpr double COM_STIFFNESS = 5.; // standing has CoM set-point task
 }
 
+void states::Standing::configure(const mc_rtc::Configuration & config)
+{
+  config("autoplay", startWalking_);
+  config("autoplay_plans", autoplay_plans_);
+}
+
 void states::Standing::start()
 {
   auto & ctl = controller();
@@ -48,7 +54,7 @@ void states::Standing::start()
   planChanged_ = false;
   lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
   leftFootRatio_ = ctl.leftFootRatio();
-  startWalking_ = ctl.config()("autoplay", false);
+  startWalking_ = startWalking_ || ctl.config()("autoplay", false);
   ctl.isWalking = false;
   if(supportContact.surfaceName == "RightFootCenter")
   {
@@ -80,7 +86,15 @@ void states::Standing::start()
 
   if(startWalking_) // autoplay
   {
-    auto plans = ctl.config()("autoplay_plans", std::vector<std::string>{});
+    auto plans = std::vector<std::string>{};
+    if(autoplay_plans_.size())
+    { // If defined, use plans from local state configuration
+      plans = autoplay_plans_;
+    }
+    else
+    { // otherwise use global plans
+      plans = ctl.config()("autoplay_plans", std::vector<std::string>{});
+    }
     if(plans.size() == 0)
     {
       startWalking_ = false;

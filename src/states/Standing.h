@@ -52,6 +52,8 @@ namespace states
  */
 struct Standing : State
 {
+  void configure(const mc_rtc::Configuration &) override;
+
   /** Start state.
    *
    */
@@ -102,7 +104,8 @@ private:
   Contact rightFootContact_; /**< Current right foot contact handle in plan */
   Eigen::Vector3d copTarget_; /**< CoP target computed from GUI input */
   bool planChanged_; /**< Has footstep plan changed? */
-  bool startWalking_; /**< Has the user clicked on "Start walking"? */
+  bool startWalking_ = false; /**< Has the user clicked on "Start walking"? */
+  std::vector<std::string> autoplay_plans_; /** Plans to play if config(autoplay) = true */
   double leftFootRatio_; /**< Left foot ratio from GUI input */
   unsigned lastInterpolatorIter_; /**< Last iteration number of the plan interpolator */
 };
