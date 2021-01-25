@@ -232,7 +232,7 @@ bool states::Standing::checkTransitions()
 {
   auto & ctl = controller();
 
-  if(!startWalking_)
+  if(!startWalking_ || ctl.pauseWalking)
   {
     return false;
   }
