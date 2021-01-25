@@ -78,13 +78,16 @@ void states::Standing::start()
 
   ctl.setContacts({{ContactState::Left, leftFootContact_.pose}, {ContactState::Right, rightFootContact_.pose}});
 
-  updatePlan(ctl.plan.name);
+  if(!ctl.pauseWalking)
+  {
+    updatePlan(ctl.plan.name);
+  }
   updateTarget(leftFootRatio_);
 
   logger().addLogEntry("walking_phase", []() { return 3.; });
   ctl.stopLogSegment();
 
-  if(startWalking_) // autoplay
+  if(startWalking_ && !ctl.pauseWalking) // autoplay
   {
     auto plans = std::vector<std::string>{};
     if(autoplay_plans_.size())
