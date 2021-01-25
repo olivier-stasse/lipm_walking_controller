@@ -57,16 +57,15 @@ void states::DoubleSupport::start()
     if(controller().datastore().has("Plugin::FSP::Plan"))
     {
       //Recive the external footstep plan via mc_datastore.
-      
       ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
       const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
       const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
-      LOG_INFO("Current LeftFootCenter: " << X_0_lf.translation().transpose())
-      LOG_INFO("Current RightFootCenter: " << X_0_rf.translation().transpose())
       ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
       ctl.plan.rewind();
       controller().datastore().remove("Plugin::FSP::Plan");
-      LOG_ERROR("Standing::Update::FootStepPlan")
+      mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
+      mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
+      mc_rtc::log::error("Standing::Update::FootStepPlan");
     }
     /*
     if(ros::param::has("online_footstep_plan"))
@@ -87,8 +86,8 @@ void states::DoubleSupport::start()
     }
   }
 
-  LOG_ERROR("Support: " << ctl.supportContact().id << " " << ctl.supportContact().surfaceName)
-  LOG_ERROR("Target: " << ctl.targetContact().id << " " << ctl.targetContact().surfaceName)
+  mc_rtc::log::error("Support: {}, {}", ctl.supportContact().id, ctl.supportContact().surfaceName);
+  mc_rtc::log::error("Target: {}, {}", ctl.targetContact().id, ctl.targetContact().surfaceName);
 
   const std::string & targetSurfaceName = ctl.targetContact().surfaceName;
   auto actualTargetPose = ctl.controlRobot().surfacePose(targetSurfaceName);
