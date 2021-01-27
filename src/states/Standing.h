@@ -108,6 +108,10 @@ private:
   std::vector<std::string> autoplay_plans_; /** Plans to play if config(autoplay) = true */
   double leftFootRatio_; /**< Left foot ratio from GUI input */
   unsigned lastInterpolatorIter_; /**< Last iteration number of the plan interpolator */
+
+  /* Tsuru add */
+  lipm_walking::Contact supportContact_;  //Keep the last contact foot stably.
+  lipm_walking::Contact targetContact_; //Keep the last contact foot stably.
 };
 
 } // namespace states
