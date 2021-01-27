@@ -193,11 +193,13 @@ void states::Standing::checkPlanUpdates()
       const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
       const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
       ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
-      ctl.plan.rewind();
- 
-      // TODO : I found that support contact is changing randomly in standing state. To resume walking naturally, please make the contact stable.
       
-      LOG_ERROR("current contact : " << supportContact_.surfaceName);
+      // I found that support contact is changing randomly in original standing state. 
+      // To resume walking naturally, I memorized the landing foot in start() function.
+      
+      //ctl.plan.rewind(); 
+
+      //LOG_ERROR("current contact : " << supportContact_.surfaceName);
       
       if(supportContact_.surfaceName == "RightFootCenter")
       {
