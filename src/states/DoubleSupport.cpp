@@ -65,7 +65,7 @@ void states::DoubleSupport::start()
       controller().datastore().remove("Plugin::FSP::Plan");
       mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
       mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
-      mc_rtc::log::error("Standing::Update::FootStepPlan");
+      mc_rtc::log::info("DoubleSupport::Update::FootStepPlan");
     }
     /*
     if(ros::param::has("online_footstep_plan"))
@@ -85,9 +85,6 @@ void states::DoubleSupport::start()
       controller().datastore().make<bool>("Plugin::FSP::Request", false);
     }
   }
-
-  mc_rtc::log::error("Support: {}, {}", ctl.supportContact().id, ctl.supportContact().surfaceName);
-  mc_rtc::log::error("Target: {}, {}", ctl.targetContact().id, ctl.targetContact().surfaceName);
 
   const std::string & targetSurfaceName = ctl.targetContact().surfaceName;
   auto actualTargetPose = ctl.controlRobot().surfacePose(targetSurfaceName);

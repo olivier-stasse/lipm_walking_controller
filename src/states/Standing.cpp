@@ -213,7 +213,11 @@ void states::Standing::checkPlanUpdates()
       controller().datastore().remove("Plugin::FSP::Plan");
       mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
       mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
-      mc_rtc::log::error("Standing::Update::FootStepPlan");
+      mc_rtc::log::info("Standing::Update::FootStepPlan");
+    }
+    else if(!ctl.pauseWalking && !controller().datastore().has("Plugin::FSP::Request"))
+    {
+      controller().datastore().make<bool>("Plugin::FSP::Request", true);
     }
   }
 
@@ -254,7 +258,9 @@ bool states::Standing::checkTransitions()
 {
   auto & ctl = controller();
 
-  if(!startWalking_ || ctl.pauseWalking)
+  bool hasPlanFromExternal = controller().datastore().has("Plugin::FSP::Plan");
+
+  if(!hasPlanFromExternal || !startWalking_ || ctl.pauseWalking)
   {
     return false;
   }
