@@ -258,9 +258,9 @@ bool states::Standing::checkTransitions()
 {
   auto & ctl = controller();
 
-  bool hasPlanFromExternal = controller().datastore().has("Plugin::FSP::Plan");
+  bool hasPlanFromExternal = (controller().datastore().has("Plugin::FSP::Plan") && ctl.plan.name == "external");
 
-  if(!hasPlanFromExternal || !startWalking_ || ctl.pauseWalking)
+  if(!(hasPlanFromExternal || ctl.plan.name != "external") || !startWalking_ || ctl.pauseWalking)
   {
     return false;
   }
