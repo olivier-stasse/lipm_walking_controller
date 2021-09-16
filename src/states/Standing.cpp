@@ -51,7 +51,7 @@ void states::Standing::start()
   supportContact_ = ctl.supportContact();
   targetContact_ = ctl.targetContact();
 
-  controller().datastore().remove("Plugin::FSP::Plan");
+  controller().datastore().remove("Plugin::FSP::Request");
   controller().datastore().make<bool>("Plugin::FSP::Request", true);
 
   planChanged_ = false;
@@ -288,7 +288,7 @@ void states::Standing::startWalking()
   }
   startWalking_ = true;
   gui()->addElement({"Walking", "Main"},
-                    mc_rtc::gui::Button("Pause walking", [&ctl]() { ctl.pauseWalkingCallback(/* verbose = */ true); }));
+                    mc_rtc::gui::Button("Pause walking", [&ctl]() { ctl.pauseWalkingCallback(/* verbose = */ false); }));
 }
 
 void states::Standing::updatePlan(const std::string & name)
