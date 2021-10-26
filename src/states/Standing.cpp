@@ -142,8 +142,6 @@ void states::Standing::start()
 
 void states::Standing::teardown()
 {
-  auto & ctl = controller();
-
   logger().removeLogEntry("walking_phase");
 
   if(gui())
