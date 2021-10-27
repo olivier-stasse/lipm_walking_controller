@@ -60,13 +60,10 @@ void PlanInterpolator::addGUIElements()
               },
               [this](const Eigen::VectorXd & desired) { updateWorldTarget_(desired.head<3>()); }));
 
-  gui_->addElement(
-    {"Walking", "Online"},
-    Button("Toggle replan", [this](){ online = ! online; }),
-    Label("Will replan online?:", [this](){ return (online ? "yes" : "no"); }),
-    Button("Toggle goal update online", [this](){ goal_online_update = ! goal_online_update; }),
-    Label("Will update the goal online?:", [this](){ return (goal_online_update ? "yes" : "no"); })
-  );
+  gui_->addElement({"Walking", "Online"}, Button("Toggle replan", [this]() { online = !online; }),
+                   Label("Will replan online?:", [this]() { return (online ? "yes" : "no"); }),
+                   Button("Toggle goal update online", [this]() { goal_online_update = !goal_online_update; }),
+                   Label("Will update the goal online?:", [this]() { return (goal_online_update ? "yes" : "no"); }));
 
   gui_->addElement(
       {"Walking", "Footsteps"}, Label("Plan name", [this]() { return customPlan_.name; }),
@@ -207,11 +204,11 @@ void PlanInterpolator::run()
 {
   if(online)
   {
-     if(gait_ == Gait::Walk)
+    if(gait_ == Gait::Walk)
     {
       runWalking_();
     }
-     else if(gait_ == Gait::Shuffle)
+    else if(gait_ == Gait::Shuffle)
     {
       runShuffling_();
     }

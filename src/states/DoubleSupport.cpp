@@ -56,7 +56,7 @@ void states::DoubleSupport::start()
   {
     if(controller().datastore().has("Plugin::FSP::Plan"))
     {
-      //Recive the external footstep plan via mc_datastore.
+      // Recive the external footstep plan via mc_datastore.
       ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
       const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
       const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
@@ -92,7 +92,8 @@ void states::DoubleSupport::start()
 
   if(ctl.isLastDSP()) // called after goToNextFootstep
   {
-    stopDuringThisDSP_ = true; //TODO: We have to comment out this line to walk permanently. Or set some condition to stop/restart walking.
+    stopDuringThisDSP_ = true; // TODO: We have to comment out this line to walk permanently. Or set some condition to
+                               // stop/restart walking.
   }
 
   if(ctl.prevContact().surfaceName == "LeftFootCenter")

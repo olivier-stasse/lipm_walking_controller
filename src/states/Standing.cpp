@@ -191,21 +191,21 @@ void states::Standing::checkPlanUpdates()
       const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
       const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
       ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
-      
-      // I found that support contact is changing randomly in original standing state. 
-      // To resume walking naturally, I memorized the landing foot in start() function.
-      
-      //ctl.plan.rewind(); 
 
-      //LOG_ERROR("current contact : " << supportContact_.surfaceName);
-      
+      // I found that support contact is changing randomly in original standing state.
+      // To resume walking naturally, I memorized the landing foot in start() function.
+
+      // ctl.plan.rewind();
+
+      // LOG_ERROR("current contact : " << supportContact_.surfaceName);
+
       if(supportContact_.surfaceName == "RightFootCenter")
       {
-        ctl.plan.reset(0); //restart walking on left foot
+        ctl.plan.reset(0); // restart walking on left foot
       }
-      else// if(ctl.supportContact().surfaceName == "LeftFootCenter")
+      else // if(ctl.supportContact().surfaceName == "LeftFootCenter")
       {
-        ctl.plan.reset(1); //restart walking on right foot
+        ctl.plan.reset(1); // restart walking on right foot
       }
 
       controller().datastore().remove("Plugin::FSP::Plan");
@@ -285,8 +285,9 @@ void states::Standing::startWalking()
     return;
   }
   startWalking_ = true;
-  gui()->addElement({"Walking", "Main"},
-                    mc_rtc::gui::Button("Pause walking", [&ctl]() { ctl.pauseWalkingCallback(/* verbose = */ false); }));
+  gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Pause walking", [&ctl]() {
+                      ctl.pauseWalkingCallback(/* verbose = */ false);
+                    }));
 }
 
 void states::Standing::updatePlan(const std::string & name)
