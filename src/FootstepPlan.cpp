@@ -26,6 +26,7 @@
  */
 
 #include <mc_rbdyn/rpy_utils.h>
+#include <mc_rtc/gui.h>
 
 #include <lipm_walking/FootstepPlan.h>
 
@@ -202,6 +203,58 @@ void FootstepPlan::updateInitialTransform(const sva::PTransformd & X_0_lf,
     contacts_[i].pose = contacts_[i].pose * X_0_rise;
   }
   X_0_init_ = X_delta * X_0_rise;
+}
+
+void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
+{
+  using namespace mc_rtc::gui;
+
+  gui.addElement({"Walking", "Footsteps", "Plan"}, Label("Plan name", [this]() { return name; }),
+                 Label("Number of steps", [this]() { return contacts_.size(); }),
+                 Form("Save plan",
+                      [this](const mc_rtc::Configuration & config) {
+                        std::string out = config("Output file");
+                        mc_rtc::Configuration pout;
+                        save(pout);
+                        pout.save(out);
+                      },
+                      FormStringInput("Output file", true, "/tmp/plan.json")));
+
+  auto footStepPolygon = [](const Contact & contact) {
+    std::vector<Eigen::Vector3d> polygon;
+    polygon.push_back(contact.vertex0());
+    polygon.push_back(contact.vertex1());
+    polygon.push_back(contact.vertex2());
+    polygon.push_back(contact.vertex3());
+    return polygon;
+  };
+
+  gui.addElement(
+      {"Markers", "Footsteps", "Plan"},
+      Polygon("TargetContact", Color::Red, [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
+      Polygon("FootstepPlan", Color::Blue, [this, footStepPolygon]() {
+        std::vector<std::vector<Eigen::Vector3d>> polygons;
+        const auto & contacts = contacts_;
+        for(unsigned i = 0; i < contacts.size(); i++)
+        {
+          auto & contact = contacts[i];
+          double supportDist = (contact.p() - supportContact().p()).norm();
+          double targetDist = (contact.p() - targetContact().p()).norm();
+          constexpr double SAME_CONTACT_DIST = 0.005;
+          // only display contact if it is not the support or target contact
+          if(supportDist > SAME_CONTACT_DIST && targetDist > SAME_CONTACT_DIST)
+          {
+            polygons.push_back(footStepPolygon(contact));
+          }
+        }
+        return polygons;
+      }));
+}
+
+void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
+{
+  gui.removeCategory({"Walking", "Footsteps", "Plan"});
+  gui.removeCategory({"Markers", "Footsteps", "Plan"});
 }
 
 } // namespace lipm_walking

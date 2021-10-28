@@ -32,6 +32,14 @@
 #include <lipm_walking/utils/clamp.h>
 #include <string>
 
+namespace mc_rtc
+{
+namespace gui
+{
+struct StateBuilder;
+}
+} // namespace mc_rtc
+
 namespace lipm_walking
 {
 
@@ -421,6 +429,18 @@ struct FootstepPlan
   {
     reset(0);
   }
+
+  /**
+   * @brief Display the footstep plan in the GUI
+   * - Position of each footstep as a (blue) polygon
+   * - Current support footstep shown as a (red) polygon
+   */
+  void addGUIElements(mc_rtc::gui::StateBuilder & gui);
+
+  /**
+   * @brief Remove the footstep plan from the GUI
+   */
+  void removeGUIElements(mc_rtc::gui::StateBuilder & gui);
 
 public:
   mc_rtc::Configuration mpcConfig;

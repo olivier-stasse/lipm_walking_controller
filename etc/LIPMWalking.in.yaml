@@ -52,12 +52,6 @@ robot_models:
       friction: 0.7
       leftAnkleOffset: [0.,0.] # target center of foot
   hrp4cr:
-    sole:
-      half_length: 0.08
-      half_width: 0.038
-      friction: 0.7
-      leftAnkleOffset: [0.,0.] # target center of foot
-  hrp4cr:
     stabilizer:
       dcm_tracking:
         gains:

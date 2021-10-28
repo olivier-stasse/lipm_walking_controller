@@ -44,7 +44,7 @@ void PlanInterpolator::addGUIElements()
   using namespace mc_rtc::gui;
 
   gui_->addElement(
-      {"Markers", "Footsteps"},
+      {"Markers", "Footsteps", "PlanInterpolator"},
       Trajectory("Support_Path", [this]() -> const std::vector<Eigen::Vector3d> & { return supportPathDisplay_; }),
       XYTheta("World target [m, rad]",
               [this]() -> Eigen::VectorXd {
@@ -60,16 +60,18 @@ void PlanInterpolator::addGUIElements()
               },
               [this](const Eigen::VectorXd & desired) { updateWorldTarget_(desired.head<3>()); }));
 
-  gui_->addElement({"Walking", "Online"}, Button("Toggle replan", [this]() { online = !online; }),
+  gui_->addElement({"Walking", "Footsteps", "PlanInterpolator", "Online"},
+                   Button("Toggle replan", [this]() { online = !online; }),
                    Label("Will replan online?:", [this]() { return (online ? "yes" : "no"); }),
                    Button("Toggle goal update online", [this]() { goal_online_update = !goal_online_update; }),
                    Label("Will update the goal online?:", [this]() { return (goal_online_update ? "yes" : "no"); }));
 
   gui_->addElement(
-      {"Walking", "Footsteps"}, Label("Plan name", [this]() { return customPlan_.name; }),
+      {"Walking", "Footsteps", "PlanInterpolator"},
       ComboInput("Gait", {"Walk", "Shuffle", "Turn"}, [this]() { return gait(); },
                  [this](const std::string & dir) { gait(dir); }),
-      ComboInput("Lead foot", {"Left", "Right"}, [this]() -> std::string { return (startWithRightFootstep_) ? "Right" : "Left"; },
+      ComboInput("Lead foot", {"Left", "Right"},
+                 [this]() -> std::string { return (startWithRightFootstep_) ? "Right" : "Left"; },
                  [this](const std::string & footName) {
                    startWithRightFootstep_ = (footName == "Right");
                    run();
@@ -115,22 +117,14 @@ void PlanInterpolator::addGUIElements()
       Label("Number of steps", [this]() { return nbFootsteps_; }),
       Label("Step angle [deg]", [this]() { return std::round(stepAngle_ * 180. / M_PI * 10.) / 10.; }),
       Label("Step length [m]", [this]() { return std::round(stepLength_ * 1000.) / 1000.; }),
-      Label("Total length [m]", [this]() { return std::round(supportPath_.arcLength(0., 1.) * 1000.) / 1000.; }),
-      Form("Save plan",
-           [this](const mc_rtc::Configuration & config) {
-             std::string out = config("Output file");
-             mc_rtc::Configuration pout;
-             customPlan_.save(pout);
-             pout.save(out);
-           },
-           FormStringInput("Output file", true, "/tmp/plan.json")));
+      Label("Total length [m]", [this]() { return std::round(supportPath_.arcLength(0., 1.) * 1000.) / 1000.; }));
 }
 
 void PlanInterpolator::removeGUIElements()
 {
-  gui_->removeCategory({"Walking", "Footsteps"});
-  gui_->removeElement({"Markers", "Footsteps"}, "Support_Path");
-  gui_->removeElement({"Markers", "Footsteps"}, "World target [m, rad]");
+  gui_->removeCategory({"Walking", "Footsteps", "PlanInterpolator"});
+  gui_->removeCategory({"Markers", "Footsteps", "PlanInterpolator"});
+  gui_->removeCategory({"Walking", "Footsteps", "PlanInterpolator", "Online"});
 }
 
 void PlanInterpolator::updateWorldTarget_(const Eigen::Vector3d & desired)

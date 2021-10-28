@@ -55,8 +55,8 @@ struct SE2d
   /** Initialize a new SE2 transform.
    *
    * Assumes that rotation is around the +z axis
-   * 
-   * \param pose World pose 
+   *
+   * \param pose World pose
    */
   SE2d(const sva::PTransformd & pose)
   {

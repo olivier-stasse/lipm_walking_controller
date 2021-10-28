@@ -242,35 +242,6 @@ void Controller::addGUIElements(std::shared_ptr<mc_rtc::gui::StateBuilder> gui)
 {
   using namespace mc_rtc::gui;
 
-  auto footStepPolygon = [](const Contact & contact) {
-    std::vector<Eigen::Vector3d> polygon;
-    polygon.push_back(contact.vertex0());
-    polygon.push_back(contact.vertex1());
-    polygon.push_back(contact.vertex2());
-    polygon.push_back(contact.vertex3());
-    return polygon;
-  };
-
-  gui->addElement(
-      {"Markers", "Footsteps"},
-      Polygon("TargetContact", Color::Red, [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
-      Polygon("FootstepPlan", Color::Blue, [this, footStepPolygon]() {
-        std::vector<std::vector<Eigen::Vector3d>> polygons;
-        const auto & contacts = plan.contacts();
-        for(unsigned i = 0; i < contacts.size(); i++)
-        {
-          auto & contact = contacts[i];
-          double supportDist = (contact.p() - supportContact().p()).norm();
-          double targetDist = (contact.p() - targetContact().p()).norm();
-          constexpr double SAME_CONTACT_DIST = 0.005;
-          // only display contact if it is not the support or target contact
-          if(supportDist > SAME_CONTACT_DIST && targetDist > SAME_CONTACT_DIST)
-          {
-            polygons.push_back(footStepPolygon(contact));
-          }
-        }
-        return polygons;
-      }));
   gui->addElement(
       {"Markers", "Sole"},
       mc_rtc::gui::Point3D("Target Ankle Pos", [this]() { return this->targetContact().anklePos(sole_); }),
@@ -502,6 +473,7 @@ void Controller::loadFootstepPlan(std::string name)
   FootstepPlan defaultPlan = planInterpolator.getPlan(name);
   if(loadingNewPlan)
   {
+    plan.removeGUIElements(*gui());
     plan = defaultPlan;
     plan.name = name;
     mpc_.configure(mpcConfig_);
@@ -527,6 +499,7 @@ void Controller::loadFootstepPlan(std::string name)
 
   if(loadingNewPlan)
   {
+    plan.addGUIElements(*gui());
     mc_rtc::log::info("Loaded footstep plan \"{}\"", name);
   }
 }
