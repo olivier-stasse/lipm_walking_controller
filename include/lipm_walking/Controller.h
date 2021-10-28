@@ -36,6 +36,7 @@
 #include <mc_tasks/lipm_stabilizer/StabilizerTask.h>
 
 #include <lipm_walking/Contact.h>
+#include <lipm_walking/ExternalPlanner.h>
 #include <lipm_walking/FootstepPlan.h>
 #include <lipm_walking/ModelPredictiveControl.h>
 #include <lipm_walking/PlanInterpolator.h>
@@ -296,7 +297,9 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
 
 public: /* visible to FSM states */
   FootstepPlan plan; /**< Current footstep plan */
-  PlanInterpolator planInterpolator; /**< Footstep plan interpolator */
+  PlanInterpolator planInterpolator; /**< Footstep plan interpolator. Used to generate a simple FootstepPlan when we are
+                                        not using an external planner */
+  ExternalPlanner externalFootstepPlanner; ///< Handle requesting/receiving plans from an external planner
   bool emergencyStop = false; /**< Emergency flag: if on, the controller stops doing anything */
   bool pauseWalking = false; /**< Is the pause-walking behavior engaged? */
   bool pauseWalkingRequested = false; /**< Has user clicked on the "Pause walking" button? */

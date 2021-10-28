@@ -293,13 +293,16 @@ void states::Standing::startWalking()
 void states::Standing::updatePlan(const std::string & name)
 {
   auto & ctl = controller();
-  if(name.find("custom") != std::string::npos)
+
+  ctl.externalFootstepPlanner.removeGUIElements(*ctl.gui());
+  ctl.planInterpolator.removeGUIElements();
+
+  if(name == "external")
   {
-    if(!ctl.planInterpolator.isShown)
-    {
-      ctl.planInterpolator.addGUIElements();
-      ctl.planInterpolator.isShown = true;
-    }
+    ctl.externalFootstepPlanner.addGUIElements(*ctl.gui());
+  }
+  else if(name.find("custom") != std::string::npos)
+  {
     if(name.find("backward") != std::string::npos)
     {
       ctl.planInterpolator.restoreBackwardTarget();
@@ -316,11 +319,6 @@ void states::Standing::updatePlan(const std::string & name)
   }
   else // new plan is not custom
   {
-    if(ctl.planInterpolator.isShown)
-    {
-      ctl.planInterpolator.removeGUIElements();
-      ctl.planInterpolator.isShown = false;
-    }
     ctl.loadFootstepPlan(name);
   }
   planChanged_ = true;

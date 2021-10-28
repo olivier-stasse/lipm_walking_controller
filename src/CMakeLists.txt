@@ -28,6 +28,7 @@ set(CONTROLLER_SRC
     FootstepPlan.cpp
     ModelPredictiveControl.cpp
     PlanInterpolator.cpp
+    ExternalPlanner.cpp
     Preview.cpp
     SwingFoot.cpp)
 
@@ -37,6 +38,7 @@ set(CONTROLLER_HDR
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/FootstepPlan.h
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/ModelPredictiveControl.h
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/PlanInterpolator.h
+    ${CMAKE_SOURCE_DIR}/include/lipm_walking/ExternalPlanner.h
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/Preview.h
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/Sole.h
     ${CMAKE_SOURCE_DIR}/include/lipm_walking/State.h

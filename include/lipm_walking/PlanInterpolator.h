@@ -142,7 +142,7 @@ struct PlanInterpolator
    * \returns gait Current gait string.
    *
    */
-  std::string gait() const
+  std::string gait() const noexcept
   {
     if(gait_ == Gait::Shuffle)
     {
@@ -316,7 +316,6 @@ private:
   void updateWorldTarget_(const Eigen::Vector3d & desired);
 
 public:
-  bool isShown = false; /**< Is the footstep interpolator tab displayed? */
   unsigned nbIter = 0; /**< Number of times the interpolator was called */
   bool online = true; // Tsuru added. It is used for online footstep replanning.
   bool goal_online_update = true; // Tsuru added. It is used for online goal updating.

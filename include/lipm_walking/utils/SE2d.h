@@ -109,7 +109,7 @@ struct SE2d
    * \returns v Vector {x, y, theta} of transform coordinates.
    *
    */
-  inline Eigen::Vector3d vector()
+  inline const Eigen::Vector3d vector() const noexcept
   {
     return {x, y, theta};
   }
