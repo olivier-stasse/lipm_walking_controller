@@ -18,7 +18,7 @@ struct OnlineFootstepPlanner : ExternalFootstepPlanner
    * @param request Requested parameters for the plan (start, finish, time, etc)
    * @return std::future<boost::optional<Plan>> A future plan to be returned once processed
    */
-  std::future<boost::optional<Plan>> requestPlan(const Request & request) override;
+  DeferredPlan requestPlan(const Request & request) override;
 };
 
 } // namespace ExternalFootstepPlanner

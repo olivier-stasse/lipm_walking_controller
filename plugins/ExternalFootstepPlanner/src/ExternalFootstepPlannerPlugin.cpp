@@ -39,42 +39,25 @@ void ExternalFootstepPlannerPlugin::reset(mc_control::MCGlobalController &)
   mc_rtc::log::success("[ExternalFootstepPlanner] Plugin reset");
 }
 
-/**
- * @brief Checks whether a future is ready (computation finished)
- *
- * @tparam R Type of future to check
- * @param f Future to be checked
- * @return true If the future has finished
- */
-template<typename R>
-bool is_ready(std::future<R> const & f)
-{
-  return f.valid() && f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-}
-
 void ExternalFootstepPlannerPlugin::before(mc_control::MCGlobalController & gc)
 {
   auto & ctl = gc.controller();
 
   // try dummy request
-  static auto request = ctl.datastore().call<std::future<boost::optional<Plan>>, const Request &>(
-      "ExternalFootstepPlanner::Request", static_cast<const Request &>(Request{}));
+  static auto futurePlan = ctl.datastore().call<DeferredPlan, const Request &>("ExternalFootstepPlanner::Request",
+                                                                               static_cast<const Request &>(Request{}));
 
-  if(is_ready(request))
+  if(futurePlan.ready())
   {
     mc_rtc::log::success("Received dummy plan!");
-    if(request.valid())
+    auto result = futurePlan.get();
+    if(result)
     {
-      mc_rtc::log::info("calling get");
-      auto result = request.get();
-      if(result)
-      {
-        mc_rtc::log::info("Planner returned a plan");
-      }
-      else
-      {
-        mc_rtc::log::warning("Planner did not return a plan");
-      }
+      mc_rtc::log::info("Planner returned a plan");
+    }
+    else
+    {
+      mc_rtc::log::warning("Planner did not return a plan");
     }
   }
 }
