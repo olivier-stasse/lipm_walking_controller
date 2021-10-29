@@ -52,4 +52,5 @@ if(EXISTS "${MC_RTC_LIBDIR}/mc_controller/etc/LIPMWalking.conf")
 ")
 endif()
 
+add_subdirectory(plugins/ExternalFootstepPlanner)
 add_subdirectory(src)
