@@ -36,53 +36,6 @@ using Color = mc_rtc::gui::Color;
 namespace lipm_walking
 {
 
-/**
- * @brief Recursively merge plan configurations
- * Allows for
- * plans:
- *   hrp4:
- *    com_height: 0.75
- *    contacts:
- *    - ...
- *   hrp4j:
- *    base: hrp4
- *    com_height: 0.78
- *
- *
- * @param plans Configuration object containing all the plans
- * @param robot Robot for which the plan should be merged
- *
- * @return Merged plan for the specified robot
- */
-mc_rtc::Configuration mergePlanConfigs(const mc_rtc::Configuration & plans, const std::string & robot)
-{
-  if(plans(robot).has("base"))
-  {
-    std::string base = plans(robot)("base");
-    if(base == robot)
-    {
-      mc_rtc::log::error_and_throw<std::runtime_error>(
-          "[LIPMWalking] Plan \"{}\" cannot inherit from itself (base: \"{}\")", robot, base);
-    }
-    else if(!plans.has(base))
-    {
-      mc_rtc::log::error_and_throw<std::runtime_error>("[LIPMWalking] Plan \"{}\" has no base \"{}\"", robot, base);
-    }
-    else
-    {
-      mc_rtc::Configuration robotConf = plans(robot);
-      robotConf.remove("base");
-      auto res = mergePlanConfigs(plans, base);
-      res.load(robotConf);
-      return res;
-    }
-  }
-  else
-  {
-    return plans(robot);
-  }
-}
-
 Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
                        double dt,
                        const mc_rtc::Configuration & config)
@@ -90,7 +43,7 @@ Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
   halfSitPose(controlRobot().mbc().q)
 {
   auto robotConfig = config("robot_models")(controlRobot().name());
-  auto planConfig = mergePlanConfigs(config("plans"), controlRobot().name());
+  auto planConfig = config("plans")(controlRobot().name());
 
   mc_rtc::log::info("Loading default stabilizer configuration");
   defaultStabilizerConfig_ = robot().module().defaultLIPMStabilizerConfiguration();
