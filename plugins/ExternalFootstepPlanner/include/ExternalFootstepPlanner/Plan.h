@@ -17,5 +17,6 @@ struct Plan
 protected:
   std::vector<Eigen::Vector3d> contacts_;
 };
+
 } // namespace ExternalFootstepPlanner
 } // namespace mc_plugin

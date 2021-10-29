@@ -1,10 +1,6 @@
 #pragma once
 
-#include <boost/optional.hpp>
-
-#include <ExternalFootstepPlanner/Plan.h>
-#include <ExternalFootstepPlanner/Request.h>
-#include <future>
+#include <ExternalFootstepPlanner/ExternalFootstepPlanner.h>
 
 namespace mc_plugin
 {
@@ -14,7 +10,7 @@ namespace ExternalFootstepPlanner
 /**
  * @brief Base interface to interact with external planners
  */
-struct ExternalFootstepPlanner
+struct OnlineFootstepPlanner : ExternalFootstepPlanner
 {
   /**
    * @brief
@@ -22,7 +18,7 @@ struct ExternalFootstepPlanner
    * @param request Requested parameters for the plan (start, finish, time, etc)
    * @return std::future<boost::optional<Plan>> A future plan to be returned once processed
    */
-  virtual std::future<boost::optional<Plan>> requestPlan(const Request & request) = 0;
+  std::future<boost::optional<Plan>> requestPlan(const Request & request) override;
 };
 
 } // namespace ExternalFootstepPlanner

@@ -3,10 +3,12 @@ pkg_check_modules(mc_plugin_footstep_plan_msgs REQUIRED IMPORTED_TARGET mc_plugi
 
 set(ExternalFootstepPlanner_data_SRC
   src/Plan.cpp
+  src/Request.cpp
 )
 
 set(ExternalFootstepPlanner_data_HDR
   include/ExternalFootstepPlanner/Plan.h
+  include/ExternalFootstepPlanner/Request.h
 )
 add_library(ExternalFootstepPlanner_data "${ExternalFootstepPlanner_data_SRC}" "${ExternaleFootstepPlanner_data_HDR}")
 if(TARGET Eigen3::Eigen)
@@ -27,11 +29,15 @@ install(
 
 
 set(ExternalFootstepPlanner_SRC
+  src/ExternalFootstepPlannerPlugin.cpp
   src/ExternalFootstepPlanner.cpp
+  src/OnlineFootstepPlanner.cpp
 )
 
 set(ExternalFootstepPlanner_HDR
+  include/ExternalFootstepPlanner/ExternalFootstepPlannerPlugin.h
   include/ExternalFootstepPlanner/ExternalFootstepPlanner.h
+  include/ExternalFootstepPlanner/OnlineFootstepPlanner.h
 )
 
 
