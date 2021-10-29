@@ -86,7 +86,8 @@ mc_rtc::Configuration mergePlanConfigs(const mc_rtc::Configuration & plans, cons
 Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
                        double dt,
                        const mc_rtc::Configuration & config)
-: mc_control::fsm::Controller(robotModule, dt, config), planInterpolator(gui()), halfSitPose(controlRobot().mbc().q)
+: mc_control::fsm::Controller(robotModule, dt, config), planInterpolator(gui()), externalFootstepPlanner(*this),
+  halfSitPose(controlRobot().mbc().q)
 {
   auto robotConfig = config("robot_models")(controlRobot().name());
   auto planConfig = mergePlanConfigs(config("plans"), controlRobot().name());
@@ -95,9 +96,9 @@ Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
   defaultStabilizerConfig_ = robot().module().defaultLIPMStabilizerConfiguration();
   if(robotConfig.has("stabilizer"))
   {
-    mc_rtc::log::info("Loading additional stabilizer configuration:\n{}", robotConfig("stabilizer").dump(true));
+    mc_rtc::log::info("Loading additional stabilizer configuration");
     defaultStabilizerConfig_.load(robotConfig("stabilizer"));
-    mc_rtc::log::info("Stabilizer Configuration:\n{}", defaultStabilizerConfig_.save().dump(true));
+    // mc_rtc::log::info("Stabilizer Configuration:\n{}", defaultStabilizerConfig_.save().dump(true));
   }
 
   // Patch CoM height and step width in all plans

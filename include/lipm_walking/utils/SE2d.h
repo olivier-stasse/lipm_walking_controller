@@ -31,6 +31,9 @@
 
 #include <SpaceVecAlg/SpaceVecAlg>
 
+namespace lipm_walking
+{
+
 namespace utils
 {
 
@@ -121,7 +124,7 @@ struct SE2d
    */
   inline Eigen::Vector3d vectorDegrees() const
   {
-    return {x, y, theta * 180. / M_PI};
+    return {x, y, mc_rtc::constants::toDeg(theta)};
   }
 
 public:
@@ -131,5 +134,10 @@ public:
 };
 
 } // namespace utils
+} // namespace lipm_walking
 
-using utils::SE2d;
+inline std::ostream & operator<<(std::ostream & os, const lipm_walking::utils::SE2d & se2d)
+{
+  os << se2d.x << ", " << se2d.y << ", " << se2d.theta;
+  return os;
+}

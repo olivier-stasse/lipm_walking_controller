@@ -51,6 +51,8 @@ struct PlanInterpolator
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+  using SE2d = lipm_walking::utils::SE2d;
+
   static constexpr double DEFAULT_EXTRA_STEP_WIDTH = 0.; // [m]
   static constexpr double IN_PLACE_EXTRA_STEP_WIDTH = 0.02; // [m]
   static constexpr double IN_PLACE_MAX_STEP_ANGLE = 45.; // [deg]

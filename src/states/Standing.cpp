@@ -51,9 +51,6 @@ void states::Standing::start()
   supportContact_ = ctl.supportContact();
   targetContact_ = ctl.targetContact();
 
-  controller().datastore().remove("Plugin::FSP::Request");
-  controller().datastore().make<bool>("Plugin::FSP::Request", true);
-
   planChanged_ = false;
   lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
   leftFootRatio_ = ctl.leftFootRatio();
@@ -185,9 +182,13 @@ void states::Standing::checkPlanUpdates()
 
   if(ctl.plan.name == "external")
   {
-    if(controller().datastore().has("Plugin::FSP::Plan"))
+    if(ctl.externalFootstepPlanner.hasPlan())
     {
-      ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
+      // XXX remove/add gui should be done automatically when assigning a plan
+      ctl.plan.removeGUIElements(*ctl.gui());
+      ctl.plan = ctl.externalFootstepPlanner.pop_plan();
+      ctl.plan.addGUIElements(*ctl.gui());
+      ctl.plan.name = "external";
       const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
       const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
       ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
@@ -208,23 +209,21 @@ void states::Standing::checkPlanUpdates()
         ctl.plan.reset(1); // restart walking on right foot
       }
 
-      controller().datastore().remove("Plugin::FSP::Plan");
       mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
       mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
       mc_rtc::log::info("Standing::Update::FootStepPlan");
     }
-    else if(!ctl.pauseWalking && !controller().datastore().has("Plugin::FSP::Request"))
+  }
+  else
+  {
+    if(ctl.planInterpolator.nbIter > lastInterpolatorIter_)
     {
-      controller().datastore().make<bool>("Plugin::FSP::Request", true);
+      ctl.loadFootstepPlan(ctl.planInterpolator.customPlanName());
+      lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
+      planChanged_ = true;
     }
   }
 
-  if(ctl.planInterpolator.nbIter > lastInterpolatorIter_)
-  {
-    ctl.loadFootstepPlan(ctl.planInterpolator.customPlanName());
-    lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
-    planChanged_ = true;
-  }
   if(planChanged_)
   {
     if(gui())
@@ -256,9 +255,7 @@ bool states::Standing::checkTransitions()
 {
   auto & ctl = controller();
 
-  bool hasPlanFromExternal = (controller().datastore().has("Plugin::FSP::Plan") && ctl.plan.name == "external");
-
-  if(!(hasPlanFromExternal || ctl.plan.name != "external") || !startWalking_ || ctl.pauseWalking)
+  if(!startWalking_ || ctl.pauseWalking)
   {
     return false;
   }
@@ -294,12 +291,17 @@ void states::Standing::updatePlan(const std::string & name)
 {
   auto & ctl = controller();
 
-  ctl.externalFootstepPlanner.removeGUIElements(*ctl.gui());
+  ctl.externalFootstepPlanner.removeGUIElements();
   ctl.planInterpolator.removeGUIElements();
 
   if(name == "external")
   {
-    ctl.externalFootstepPlanner.addGUIElements(*ctl.gui());
+    ctl.externalFootstepPlanner.addGUIElements();
+    ctl.plan.removeGUIElements(*ctl.gui());
+    ctl.loadFootstepPlan("external");
+    // XXX should set up an empty external plan
+    // XXX should not require an external plan in configuration
+    // XXX should not use planInterpolator to check whether we are external
   }
   else if(name.find("custom") != std::string::npos)
   {
