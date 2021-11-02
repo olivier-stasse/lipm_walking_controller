@@ -29,7 +29,12 @@
 
 #include <mc_rtc/constants.h>
 
+#include <ExternalFootstepPlanner/Plan.h>
+#include <ExternalFootstepPlanner/Request.h>
 #include <lipm_walking/utils/clamp.h>
+
+using DeferredPlan = mc_plugin::ExternalFootstepPlanner::DeferredPlan;
+using Request = mc_plugin::ExternalFootstepPlanner::Request;
 
 namespace lipm_walking
 {
@@ -182,37 +187,51 @@ void states::Standing::checkPlanUpdates()
 
   if(ctl.plan.name == "external")
   {
-    if(ctl.externalFootstepPlanner.hasPlan())
+    if(ctl.externalFootstepPlanner.planRequested())
     {
-      // XXX remove/add gui should be done automatically when assigning a plan
-      ctl.plan.removeGUIElements(*ctl.gui());
-      ctl.plan = ctl.externalFootstepPlanner.pop_plan();
-      ctl.plan.addGUIElements(*ctl.gui());
-      ctl.plan.name = "external";
-      const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
-      const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
-      ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
+      ctl.externalFootstepPlanner.clearPlanRequested();
 
-      // I found that support contact is changing randomly in original standing state.
-      // To resume walking naturally, I memorized the landing foot in start() function.
+      // Request a plan that should be received by the standing state
+      // e.g this means we will wait for the plan here before completing
+      Request request;
+      utils::SE2d lf_start(controller().robot().surfacePose("LeftFootCenter"));
+      utils::SE2d rf_start(controller().robot().surfacePose("RightFootCenter"));
 
-      // ctl.plan.rewind();
-
-      // LOG_ERROR("current contact : " << supportContact_.surfaceName);
-
-      if(supportContact_.surfaceName == "RightFootCenter")
-      {
-        ctl.plan.reset(0); // restart walking on left foot
-      }
-      else // if(ctl.supportContact().surfaceName == "LeftFootCenter")
-      {
-        ctl.plan.reset(1); // restart walking on right foot
-      }
-
-      mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
-      mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
-      mc_rtc::log::info("Standing::Update::FootStepPlan");
+      //   const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
+      //   const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
+      ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::Standing, request);
     }
+    // if(ctl.externalFootstepPlanner.hasPlan())
+    // {
+    //   // XXX remove/add gui should be done automatically when assigning a plan
+    //   ctl.plan.removeGUIElements(*ctl.gui());
+    //   ctl.plan = ctl.externalFootstepPlanner.pop_plan();
+    //   ctl.plan.addGUIElements(*ctl.gui());
+    //   ctl.plan.name = "external";
+    //   const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
+    //   const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
+    //   ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
+
+    //   // I found that support contact is changing randomly in original standing state.
+    //   // To resume walking naturally, I memorized the landing foot in start() function.
+
+    //   // ctl.plan.rewind();
+
+    //   // LOG_ERROR("current contact : " << supportContact_.surfaceName);
+
+    //   if(supportContact_.surfaceName == "RightFootCenter")
+    //   {
+    //     ctl.plan.reset(0); // restart walking on left foot
+    //   }
+    //   else // if(ctl.supportContact().surfaceName == "LeftFootCenter")
+    //   {
+    //     ctl.plan.reset(1); // restart walking on right foot
+    //   }
+
+    //   mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
+    //   mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
+    //   mc_rtc::log::info("Standing::Update::FootStepPlan");
+    // }
   }
   else
   {
@@ -258,6 +277,28 @@ bool states::Standing::checkTransitions()
   if(!startWalking_ || ctl.pauseWalking)
   {
     return false;
+  }
+
+  if(ctl.plan.name == "external")
+  {
+    auto & futurePlan = ctl.externalFootstepPlanner.plan();
+    if(futurePlan.ready())
+    {
+      auto plan = futurePlan.get();
+      if(plan)
+      {
+        mc_rtc::log::info("[Standing] Received valid plan from planner");
+      }
+      else
+      {
+        mc_rtc::log::error("[Standing] Planner failed to provide a plan");
+        return false;
+      }
+    }
+    else
+    {
+      return false;
+    }
   }
 
   ctl.mpc().contacts(supportContact_, targetContact_, ctl.nextContact());

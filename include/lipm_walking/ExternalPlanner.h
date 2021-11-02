@@ -1,4 +1,8 @@
 #pragma once
+#include <mc_control/MCController.h>
+
+#include <ExternalFootstepPlanner/Plan.h>
+#include <ExternalFootstepPlanner/Request.h>
 #include <lipm_walking/FootstepPlan.h>
 #include <lipm_walking/utils/SE2d.h>
 
@@ -19,6 +23,15 @@ namespace lipm_walking
 struct ExternalPlanner
 {
   using SE2d = lipm_walking::utils::SE2d;
+  using DeferredPlan = mc_plugin::ExternalFootstepPlanner::DeferredPlan;
+  using Request = mc_plugin::ExternalFootstepPlanner::Request;
+
+  enum State
+  {
+    Standing,
+    DoubleSupport,
+    SingleSupport
+  }; ///< State in which the requested plan applies
 
   ExternalPlanner(mc_control::MCController & ctl);
   void addGUIElements();
@@ -27,32 +40,42 @@ struct ExternalPlanner
   inline void targetSE2d(const SE2d & xytheta_z);
   inline const SE2d & targetSE2d() const noexcept;
 
-  // True once the last plan requested through requestPlan has been received, false otherwise
-  inline bool hasPlan() const noexcept
+  ///< Flag indicating that we need to request a plan
+  bool planRequested() const
   {
-    return hasPlan_;
+    return requestPlan_;
   }
 
-  const lipm_walking::FootstepPlan & pop_plan() noexcept
+  void clearPlanRequested()
   {
-    hasPlan_ = false;
-    return plan_;
+    requestPlan_ = false;
   }
 
-  inline const lipm_walking::FootstepPlan & plan() const noexcept
+  void requestPlan(State state, const Request & request)
   {
-    return plan_;
+    // static auto future = ctl_.datastore().call<DeferredPlan, const Request &>("ExternalFootstepPlanner::Request",
+    // request);
+    mc_rtc::log::info("ExternalPlanner requesting");
+    futurePlan_ = ctl_.datastore().call<DeferredPlan, const Request &>("ExternalFootstepPlanner::Request", request);
+    state_ = state;
   }
 
-protected:
-  void requestPlan();
+  DeferredPlan & plan()
+  {
+    return futurePlan_;
+  }
+
+  State state() const
+  {
+    return state_;
+  }
 
 protected:
   mc_control::MCController & ctl_;
+  DeferredPlan futurePlan_; ///< This object will contain the footstep plan once computed
+  State state_ = State::Standing;
   SE2d target_; // Target expressed as X,Y,theta
-
-  lipm_walking::FootstepPlan plan_;
-  bool hasPlan_ = false;
+  bool requestPlan_ = false;
 };
 
 } // namespace lipm_walking

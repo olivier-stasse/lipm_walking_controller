@@ -43,23 +43,23 @@ void ExternalFootstepPlannerPlugin::before(mc_control::MCGlobalController & gc)
 {
   auto & ctl = gc.controller();
 
-  // try dummy request
+  // // try dummy request
   static auto futurePlan = ctl.datastore().call<DeferredPlan, const Request &>("ExternalFootstepPlanner::Request",
                                                                                static_cast<const Request &>(Request{}));
 
-  if(futurePlan.ready())
-  {
-    mc_rtc::log::success("Received dummy plan!");
-    auto result = futurePlan.get();
-    if(result)
-    {
-      mc_rtc::log::info("Planner returned a plan");
-    }
-    else
-    {
-      mc_rtc::log::warning("Planner did not return a plan");
-    }
-  }
+  // if(futurePlan.ready())
+  //{
+  //  mc_rtc::log::success("Received dummy plan!");
+  //  auto result = futurePlan.get();
+  //  if(result)
+  //  {
+  //    mc_rtc::log::info("Planner returned a plan");
+  //  }
+  //  else
+  //  {
+  //    mc_rtc::log::warning("Planner did not return a plan");
+  //  }
+  //}
 }
 
 mc_control::GlobalPlugin::GlobalPluginConfiguration ExternalFootstepPlannerPlugin::configuration()

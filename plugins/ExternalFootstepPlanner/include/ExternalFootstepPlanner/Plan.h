@@ -25,6 +25,7 @@ bool is_ready(std::future<R> const & f)
 {
   return f.valid() && f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
+
 } // namespace internal
 
 struct Plan
@@ -49,6 +50,14 @@ protected:
  */
 struct DeferredPlan
 {
+  // Move only
+  DeferredPlan(const DeferredPlan &) = delete;
+  DeferredPlan & operator=(const DeferredPlan &) = delete;
+  DeferredPlan(DeferredPlan &&) = default;
+  DeferredPlan & operator=(DeferredPlan &&) = default;
+
+  DeferredPlan() {}
+
   template<typename Func>
   DeferredPlan(Func f)
   {
