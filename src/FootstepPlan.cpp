@@ -209,17 +209,6 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
 {
   using namespace mc_rtc::gui;
 
-  gui.addElement({"Walking", "Footsteps", "Plan"}, Label("Plan name", [this]() { return name; }),
-                 Label("Number of steps", [this]() { return contacts_.size(); }),
-                 Form("Save plan",
-                      [this](const mc_rtc::Configuration & config) {
-                        std::string out = config("Output file");
-                        mc_rtc::Configuration pout;
-                        save(pout);
-                        pout.save(out);
-                      },
-                      FormStringInput("Output file", true, "/tmp/plan.json")));
-
   auto footStepPolygon = [](const Contact & contact) {
     std::vector<Eigen::Vector3d> polygon;
     polygon.push_back(contact.vertex0());
@@ -261,7 +250,6 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
 
 void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
 {
-  gui.removeCategory({"Walking", "Footsteps", "Plan"});
   gui.removeCategory({"Markers", "Footsteps", "Plan"});
 }
 
