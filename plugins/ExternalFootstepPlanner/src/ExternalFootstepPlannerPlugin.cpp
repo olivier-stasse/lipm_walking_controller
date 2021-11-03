@@ -15,51 +15,55 @@ namespace ExternalFootstepPlanner
 
 void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, const mc_rtc::Configuration & config)
 {
+  using namespace mc_rtc::gui;
   auto & ctl = gc.controller();
+  auto & gui = *ctl.gui();
 
-  auto name = config("planner", std::string{"OnlineFootstepPlanner"});
-  if(name == "OnlineFootstepPlanner")
+  auto plannerName = config("planner", std::string{"OnlineFootstepPlanner"});
+  if(plannerName == "OnlineFootstepPlanner")
   {
     planner_.reset(new OnlineFootstepPlanner{});
   }
   else
   {
-    mc_rtc::log::error_and_throw<std::invalid_argument>("[ExternalFootstepPlanner] does not support planner {}", name);
+    mc_rtc::log::error_and_throw<std::invalid_argument>("[{}] does not support planner {}", name(), plannerName);
   }
 
-  ctl.datastore().make_call("ExternalFootstepPlanner::Request",
-                            [this](const Request & request) { return planner_->requestPlan(request); });
+  gui.addElement(category_, Label("Planner", [this]() { return planner_->name(); }),
+                 XYTheta("World target [m, rad]",
+                         [this]() -> std::array<double, 4> {
+                           return {target_.x, target_.y, target_.theta, 0.};
+                         },
+                         [this](const std::array<double, 4> & target) {
+                           target_.x = target[0];
+                           target_.y = target[1];
+                           target_.theta = target[2];
+                           targetChanged_ = true;
+                         }));
 
-  mc_rtc::log::success("[ExternalFootstepPlanner] Plugin initialized");
+  // Do we need replanning?
+  ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested", [this]() { return targetChanged_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::Target", [this]() { return target_; });
+  // Call this to request a new plan
+  ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan", [this](const Request & request) {
+    targetChanged_ = false;
+    planner_->requestPlan(request);
+  });
+  ctl.datastore().make_call("ExternalFootstepPlanner::HasPlan", [this]() { return planner_->hasPlan(); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::PopPlan", [this]() { return planner_->popPlan(); });
+
+  mc_rtc::log::success("[{}] Plugin initialized", name());
   reset(gc);
 }
 
 void ExternalFootstepPlannerPlugin::reset(mc_control::MCGlobalController &)
 {
-  mc_rtc::log::success("[ExternalFootstepPlanner] Plugin reset");
+  mc_rtc::log::success("[{}] Plugin reset", name());
 }
 
 void ExternalFootstepPlannerPlugin::before(mc_control::MCGlobalController & gc)
 {
   auto & ctl = gc.controller();
-
-  // // try dummy request
-  static auto futurePlan = ctl.datastore().call<DeferredPlan, const Request &>("ExternalFootstepPlanner::Request",
-                                                                               static_cast<const Request &>(Request{}));
-
-  // if(futurePlan.ready())
-  //{
-  //  mc_rtc::log::success("Received dummy plan!");
-  //  auto result = futurePlan.get();
-  //  if(result)
-  //  {
-  //    mc_rtc::log::info("Planner returned a plan");
-  //  }
-  //  else
-  //  {
-  //    mc_rtc::log::warning("Planner did not return a plan");
-  //  }
-  //}
 }
 
 mc_control::GlobalPlugin::GlobalPluginConfiguration ExternalFootstepPlannerPlugin::configuration()

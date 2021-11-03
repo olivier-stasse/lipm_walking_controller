@@ -1,16 +1,11 @@
 #pragma once
+#include <ExternalFootstepPlanner/Plan.h> // XXX for Foot only
+#include <ExternalFootstepPlanner/SE2d.h>
 
 namespace mc_plugin
 {
 namespace ExternalFootstepPlanner
 {
-
-struct SE2d
-{
-  double x = 0;
-  double y = 0;
-  double theta = 0;
-};
 
 /**
  * @brief For now the request is simply the initial position of the feet, and goal position, along with a maximum
@@ -22,6 +17,7 @@ struct Request
                                           ///< the robot is expected to be once the plan will be applied
   SE2d goal_left_foot, goal_right_foot; ///< Goal state for the feet. This is where you want each foot to be at the end
                                         ///< of the footstep plan.
+  Foot support_foot = Foot::Right;
   double max_time = 0.5;
 };
 

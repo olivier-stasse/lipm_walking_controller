@@ -436,7 +436,7 @@ void Controller::loadFootstepPlan(std::string name)
       mpc_.configure(plan.mpcConfig);
     }
   }
-  else // only reload contacts
+  else if(plan.name != "external") // only reload contacts
   {
     plan.resetContacts(defaultPlan.contacts());
   }

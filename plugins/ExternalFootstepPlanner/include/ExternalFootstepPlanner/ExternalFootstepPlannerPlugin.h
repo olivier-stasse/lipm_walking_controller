@@ -7,6 +7,7 @@
 #include <mc_control/GlobalPlugin.h>
 
 #include <ExternalFootstepPlanner/ExternalFootstepPlanner.h>
+#include <ExternalFootstepPlanner/SE2d.h>
 
 namespace mc_plugin
 {
@@ -33,8 +34,18 @@ struct ExternalFootstepPlannerPlugin : public mc_control::GlobalPlugin
 
   mc_control::GlobalPlugin::GlobalPluginConfiguration configuration() override;
 
+  inline const std::string & name() const noexcept
+  {
+    return name_;
+  }
+
 protected:
   std::unique_ptr<ExternalFootstepPlanner> planner_;
+
+  std::string name_{"ExternalFootstepPlanner"};
+  std::vector<std::string> category_{"ExternalFootStepPlanner"};
+  bool targetChanged_ = false;
+  SE2d target_;
 };
 
 } // namespace ExternalFootstepPlanner

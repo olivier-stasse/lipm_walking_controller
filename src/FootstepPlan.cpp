@@ -229,26 +229,34 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
     return polygon;
   };
 
+  auto contactsPolygons = [this, footStepPolygon](const std::string & surfaceName) {
+    std::vector<std::vector<Eigen::Vector3d>> polygons;
+    const auto & contacts = contacts_;
+    for(unsigned i = 0; i < contacts.size(); i++)
+    {
+      auto & contact = contacts[i];
+      if(contact.surfaceName == surfaceName)
+      {
+        double supportDist = (contact.p() - supportContact().p()).norm();
+        double targetDist = (contact.p() - targetContact().p()).norm();
+        constexpr double SAME_CONTACT_DIST = 0.005;
+        // only display contact if it is not the support or target contact
+        if(supportDist > SAME_CONTACT_DIST && targetDist > SAME_CONTACT_DIST)
+        {
+          polygons.push_back(footStepPolygon(contact));
+        }
+      }
+    }
+    return polygons;
+  };
+
   gui.addElement(
       {"Markers", "Footsteps", "Plan"},
       Polygon("TargetContact", Color::Red, [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
-      Polygon("FootstepPlan", Color::Blue, [this, footStepPolygon]() {
-        std::vector<std::vector<Eigen::Vector3d>> polygons;
-        const auto & contacts = contacts_;
-        for(unsigned i = 0; i < contacts.size(); i++)
-        {
-          auto & contact = contacts[i];
-          double supportDist = (contact.p() - supportContact().p()).norm();
-          double targetDist = (contact.p() - targetContact().p()).norm();
-          constexpr double SAME_CONTACT_DIST = 0.005;
-          // only display contact if it is not the support or target contact
-          if(supportDist > SAME_CONTACT_DIST && targetDist > SAME_CONTACT_DIST)
-          {
-            polygons.push_back(footStepPolygon(contact));
-          }
-        }
-        return polygons;
-      }));
+      Polygon("FootstepPlan Left", Color::Blue,
+              [this, contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
+      Polygon("FootstepPlan Right", Color::Green,
+              [this, contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
 }
 
 void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
