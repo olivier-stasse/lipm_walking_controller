@@ -73,6 +73,12 @@ void states::Standing::start()
 
   if(ctl.isLastDSP())
   {
+    // When reaching the end of an external plan, do not repeat the previous plan
+    // This prevents walking until another plan is requested and received.
+    if(ctl.plan.name == "external")
+    {
+      ctl.plan.resetContacts(ctl.planInterpolator.getPlan("external").contacts());
+    }
     ctl.loadFootstepPlan(ctl.plan.name);
   }
 
