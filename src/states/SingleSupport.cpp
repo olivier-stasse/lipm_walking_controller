@@ -30,6 +30,44 @@
 namespace lipm_walking
 {
 
+void states::SingleSupport::handleExternalPlan()
+{
+  using Foot = mc_plugin::ExternalFootstepPlanner::Foot;
+  auto & ctl = controller();
+
+  double allowedTime = ctl.externalFootstepPlanner.allowedTimeSingleSupport();
+  if(allowedTime >= duration_)
+  {
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}] Maximum allowed time ({:.3f}) for the external planner "
+                                                     "cannot be greater than the single support duration ({:.3f})",
+                                                     name(), allowedTime, duration_);
+  }
+
+  if(ctl.externalFootstepPlanner.planningRequested())
+  {
+    if(remTime_ > allowedTime)
+    { // If we have enough time left to compute a plan,
+      // then we request a plan to be used during the next DoubleSupport phase
+      if(ctl.supportContact().surfaceName == "LeftFootCenter")
+      {
+        const auto lf_start = utils::SE2d{ctl.supportContact().pose};
+        const auto rf_start = utils::SE2d{ctl.targetContact().pose};
+        Foot supportFoot = Foot::Right;
+        ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::DoubleSupport, supportFoot, lf_start, rf_start,
+                                                allowedTime);
+      }
+      else
+      {
+        const auto rf_start = utils::SE2d{ctl.supportContact().pose};
+        const auto lf_start = utils::SE2d{ctl.targetContact().pose};
+        Foot supportFoot = Foot::Left;
+        ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::DoubleSupport, supportFoot, lf_start, rf_start,
+                                                allowedTime);
+      }
+    }
+  }
+}
+
 void states::SingleSupport::start()
 {
   auto & ctl = controller();
@@ -95,6 +133,11 @@ void states::SingleSupport::runState()
 {
   auto & ctl = controller();
   double dt = ctl.timeStep;
+
+  if(ctl.plan.name == "external")
+  {
+    handleExternalPlan();
+  }
 
   updateSwingFoot();
   if(timeSinceLastPreviewUpdate_ > PREVIEW_UPDATE_PERIOD)

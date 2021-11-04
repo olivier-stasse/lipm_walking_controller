@@ -80,7 +80,7 @@ void OnlineFootstepPlanner::rosThread()
         req.request.end_right.leg = FootStep::RIGHT;
         assign_pose(request.goal_right_foot, req.request.end_right.pose);
         req.request.supportLeg = static_cast<uint8_t>(request.support_foot);
-        req.request.allowed_time = allowedTime();
+        req.request.allowed_time = request.allowed_time;
         auto res = footstep_service.call(req);
         planRequested_ = false;
         auto optplan = boost::optional<Plan>{};

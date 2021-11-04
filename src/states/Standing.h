@@ -92,13 +92,6 @@ struct Standing : State
   void startWalking();
 
 protected:
-  /** Change footstep plan.
-   *
-   * \param name New plan name.
-   *
-   */
-  void updatePlan(const std::string & name);
-
   /** Handle requesting/receiving external plans */
   void handleExternalPlan();
 

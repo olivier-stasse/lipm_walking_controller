@@ -69,6 +69,9 @@ struct DoubleSupport : State
    */
   void updatePreview();
 
+protected:
+  void handleExternalPlan();
+
 private:
   bool stopDuringThisDSP_; /**< Stop walking during this DSP */
   double duration_; /**< Total duration of the DSP in [s] */

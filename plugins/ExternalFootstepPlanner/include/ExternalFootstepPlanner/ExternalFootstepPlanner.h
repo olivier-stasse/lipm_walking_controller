@@ -23,19 +23,6 @@ struct ExternalFootstepPlanner
   virtual bool hasPlan() const noexcept = 0;
   virtual Plan popPlan() = 0;
   virtual std::string name() const = 0;
-
-  inline void allowedTime(double time)
-  {
-    allowedTime_ = time;
-  }
-
-  inline double allowedTime() const noexcept
-  {
-    return allowedTime_;
-  }
-
-protected:
-  double allowedTime_ = 0.5; /// Time allowed for a footstep request
 };
 
 } // namespace ExternalFootstepPlanner

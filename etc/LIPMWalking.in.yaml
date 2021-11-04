@@ -13,7 +13,7 @@ robot_models:
     swingfoot:
       weight: 2000
       stiffness: 500
-    # A default configuration is loaded from the robot module 
+    # A default configuration is loaded from the robot module
     # You may overwrite some parameters here. For supported options, see
     # See https://jrl-umi3218.github.io/mc_rtc/json-full.html#MetaTask/LIPMStabilizerTask
     # For example:
@@ -629,6 +629,9 @@ plans:
     external:
       double_support_duration: 0.5
       single_support_duration: 0.7
+      allowed_planning_time:
+        standing: 2.0
+        single_support: 0.5 # must be less than single_support_duration and have sufficient margin to account for communication time with the planner
       swing_height: 0.04
       com_height: 0.817301
       contacts:

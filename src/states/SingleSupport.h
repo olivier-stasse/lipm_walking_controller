@@ -79,11 +79,14 @@ struct SingleSupport : State
    */
   void updatePreview();
 
+protected:
+  void handleExternalPlan();
+
 private:
   SwingFoot swingFoot_; /**< Swing foot trajectory interpolator */
   bool hasUpdatedMPCOnce_; /**< Has the walking pattern been updated since the beginning of the SSP? */
   double duration_; /**< Total duration of the SSP in [s] */
-  double remTime_; /**< Time remainin guntil the end of the phase */
+  double remTime_; /**< Time remaining until the end of the phase */
   double stateTime_; /** Time since the beginning of the SSP */
   double timeSinceLastPreviewUpdate_; /**< Time count used to schedule MPC udpates, in [s] */
   std::shared_ptr<mc_tasks::SurfaceTransformTask> swingFootTask; /**< Current swing foot task from the stabilizer */

@@ -44,6 +44,15 @@ Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
 {
   auto robotConfig = config("robot_models")(controlRobot().name());
   auto planConfig = config("plans")(controlRobot().name());
+  if(planConfig.has("external"))
+  {
+    if(planConfig("external").has("allowed_planning_time"))
+    {
+      auto planningConf = planConfig("external")("allowed_planning_time");
+      externalFootstepPlanner.allowedTimeSingleSupport(planningConf("single_support", 0.5));
+      externalFootstepPlanner.allowedTimeStanding(planningConf("standing", 2.0));
+    }
+  }
 
   mc_rtc::log::info("Loading default stabilizer configuration");
   defaultStabilizerConfig_ = robot().module().defaultLIPMStabilizerConfiguration();
@@ -455,6 +464,32 @@ void Controller::loadFootstepPlan(std::string name)
   {
     plan.addGUIElements(*gui());
     mc_rtc::log::info("Loaded footstep plan \"{}\"", name);
+  }
+}
+
+void Controller::updatePlan(const std::string & name)
+{
+  planInterpolator.removeGUIElements();
+  if(name.find("custom") != std::string::npos)
+  {
+    planInterpolator.addGUIElements();
+    if(name.find("backward") != std::string::npos)
+    {
+      planInterpolator.restoreBackwardTarget();
+    }
+    else if(name.find("forward") != std::string::npos)
+    {
+      planInterpolator.restoreForwardTarget();
+    }
+    else if(name.find("lateral") != std::string::npos)
+    {
+      planInterpolator.restoreLateralTarget();
+    }
+    loadFootstepPlan(planInterpolator.customPlanName());
+  }
+  else // new plan is not custom
+  {
+    loadFootstepPlan(name);
   }
 }
 

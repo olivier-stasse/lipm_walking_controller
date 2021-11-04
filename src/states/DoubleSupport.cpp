@@ -32,6 +32,24 @@ namespace lipm_walking
 
 using ContactState = mc_tasks::lipm_stabilizer::ContactState;
 
+void states::DoubleSupport::handleExternalPlan()
+{
+  auto & ctl = controller();
+
+  if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::DoubleSupport))
+  {
+    ctl.plan.resetContacts(ctl.externalFootstepPlanner.plan());
+    ctl.updatePlan("external");
+  }
+  else if(ctl.externalFootstepPlanner.planRequested(ExternalPlanner::DoubleSupport))
+  {
+    mc_rtc::log::warning("[{}] An external plan was requested for this DSP but is not available, pause walking");
+    ctl.externalFootstepPlanner.cancelRequest();
+    stopDuringThisDSP_ = true;
+    ctl.pauseWalking = true;
+  }
+}
+
 void states::DoubleSupport::start()
 {
   auto & ctl = controller();
@@ -40,7 +58,13 @@ void states::DoubleSupport::start()
 
   duration_ = phaseDuration;
   initLeftFootRatio_ = ctl.leftFootRatio();
-  remTime_ = (phaseDuration > ctl.timeStep) ? phaseDuration : -ctl.timeStep;
+  if(phaseDuration <= ctl.timeStep)
+  {
+    mc_rtc::log::error_and_throw<std::invalid_argument>("[DoubleSupport] The double support phase duration cannot be "
+                                                        "less than the controller's timestep (requested {} <= {})",
+                                                        duration_, ctl.timeStep);
+  }
+  remTime_ = duration_;
   stateTime_ = 0.;
   stopDuringThisDSP_ = ctl.pauseWalking;
   if(phaseDuration > ctl.timeStep)
@@ -54,36 +78,7 @@ void states::DoubleSupport::start()
 
   if(ctl.plan.name == "external")
   {
-    if(controller().datastore().has("Plugin::FSP::Plan"))
-    {
-      // Recive the external footstep plan via mc_datastore.
-      ctl.plan = controller().datastore().get<lipm_walking::FootstepPlan>("Plugin::FSP::Plan");
-      const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
-      const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
-      ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
-      ctl.plan.rewind();
-      controller().datastore().remove("Plugin::FSP::Plan");
-      mc_rtc::log::info("Current LeftFootCenter: {}", X_0_lf.translation().transpose());
-      mc_rtc::log::info("Current RightFootCenter: {}", X_0_rf.translation().transpose());
-      mc_rtc::log::info("DoubleSupport::Update::FootStepPlan");
-    }
-    /*
-    if(ros::param::has("online_footstep_plan"))
-    {
-      ros::param::get("online_footstep_plan", ctl.planInterpolator.online);
-    }
-    ROS_ERROR("get param");
-    */
-    if(ctl.planInterpolator.online)
-    {
-      controller().datastore().remove("Plugin::FSP::Request");
-      controller().datastore().make<bool>("Plugin::FSP::Request", true);
-    }
-    else
-    {
-      controller().datastore().remove("Plugin::FSP::Request");
-      controller().datastore().make<bool>("Plugin::FSP::Request", false);
-    }
+    handleExternalPlan();
   }
 
   const std::string & targetSurfaceName = ctl.targetContact().surfaceName;
@@ -92,8 +87,7 @@ void states::DoubleSupport::start()
 
   if(ctl.isLastDSP()) // called after goToNextFootstep
   {
-    stopDuringThisDSP_ = true; // TODO: We have to comment out this line to walk permanently. Or set some condition to
-                               // stop/restart walking.
+    stopDuringThisDSP_ = true;
   }
 
   if(ctl.prevContact().surfaceName == "LeftFootCenter")
@@ -150,6 +144,7 @@ void states::DoubleSupport::runState()
 bool states::DoubleSupport::checkTransitions()
 {
   auto & ctl = controller();
+
   if(!stopDuringThisDSP_ && remTime_ < 0.)
   {
     output("SingleSupport");

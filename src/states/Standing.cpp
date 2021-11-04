@@ -86,7 +86,7 @@ void states::Standing::start()
 
   if(!ctl.pauseWalking)
   {
-    updatePlan(ctl.plan.name);
+    ctl.updatePlan(ctl.plan.name);
   }
   else
   {
@@ -118,7 +118,7 @@ void states::Standing::start()
       std::string plan = plans[0];
       plans.erase(plans.begin());
       ctl.config().add("autoplay_plans", plans);
-      updatePlan(plan);
+      ctl.updatePlan(plan);
     }
   }
 
@@ -131,7 +131,7 @@ void states::Standing::start()
     gui_.removeElement({"Walking", "Main"}, "Start walking");
     gui_.addElement({"Walking", "Main"}, ComboInput("Footstep plan", ctl.planInterpolator.availablePlans(),
                                                     [&ctl]() { return ctl.plan.name; },
-                                                    [this](const std::string & name) { updatePlan(name); }));
+                                                    [&ctl](const std::string & name) { ctl.updatePlan(name); }));
     gui_.addElement({"Standing"},
                     NumberInput("CoM target [0-1]", [this]() { return std::round(leftFootRatio_ * 10.) / 10.; },
                                 [this](double leftFootRatio) { updateTarget(leftFootRatio); }),
@@ -204,22 +204,18 @@ void states::Standing::handleExternalPlan()
     // XXX always starts with Left support foot
     // Should probably record the last used support foot when entering standing state and start from the other foot
     // instead to resume walk more naturally
-    ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::Standing, Foot::Left, lf_start,
-                                            rf_start); // ExternalPlanner::Standing, request);
+    ctl.externalFootstepPlanner.requestPlan(
+        ExternalPlanner::Standing, Foot::Left, lf_start, rf_start,
+        ctl.externalFootstepPlanner.allowedTimeStanding()); // XXX hardcoded allowed time
   }
 
-  if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::Standing))
+  if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::Standing)
+     || ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::DoubleSupport))
   {
-    // XXX temporary output
+    // If we have received a plan requested during this Standing phase or the previous DoubleSupport phase
     mc_rtc::log::info("[{}] Plan received", name());
-    auto contacts = ctl.externalFootstepPlanner.plan();
-    // Ensure that plan starts from the current feet configuration
-    const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
-    const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
-    ctl.plan.resetContacts(contacts);
-    ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
-    ctl.plan.rewind();
-    updatePlan("external");
+    ctl.plan.resetContacts(ctl.externalFootstepPlanner.plan());
+    ctl.updatePlan("external");
   }
 }
 
@@ -291,33 +287,6 @@ void states::Standing::startWalking()
   gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Pause walking", [&ctl]() {
                       ctl.pauseWalkingCallback(/* verbose = */ false);
                     }));
-}
-
-void states::Standing::updatePlan(const std::string & name)
-{
-  auto & ctl = controller();
-  ctl.planInterpolator.removeGUIElements();
-  if(name.find("custom") != std::string::npos)
-  {
-    ctl.planInterpolator.addGUIElements();
-    if(name.find("backward") != std::string::npos)
-    {
-      ctl.planInterpolator.restoreBackwardTarget();
-    }
-    else if(name.find("forward") != std::string::npos)
-    {
-      ctl.planInterpolator.restoreForwardTarget();
-    }
-    else if(name.find("lateral") != std::string::npos)
-    {
-      ctl.planInterpolator.restoreLateralTarget();
-    }
-    ctl.loadFootstepPlan(ctl.planInterpolator.customPlanName());
-  }
-  else // new plan is not custom
-  {
-    ctl.loadFootstepPlan(name);
-  }
 }
 
 } // namespace lipm_walking

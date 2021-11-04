@@ -113,6 +113,8 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
    */
   void loadFootstepPlan(std::string name);
 
+  void updatePlan(const std::string & name);
+
   /** Callback function called by "Pause walking" button.
    *
    * \param verbose Talk to user on the command line.

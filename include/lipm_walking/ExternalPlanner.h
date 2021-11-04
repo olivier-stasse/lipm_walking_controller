@@ -43,7 +43,8 @@ struct ExternalPlanner
   void requestPlan(const State state,
                    const Foot supportFoot,
                    const utils::SE2d & start_lf,
-                   const utils::SE2d & start_rf)
+                   const utils::SE2d & start_rf,
+                   double allowed_time)
   {
     Request request;
     request.start_left_foot = {start_lf.x, start_lf.y, start_lf.theta};
@@ -61,12 +62,25 @@ struct ExternalPlanner
     request.goal_left_foot = {lfGoal.x, lfGoal.y, lfGoal.theta};
     request.goal_right_foot = {rfGoal.x, rfGoal.y, rfGoal.theta};
     request.support_foot = supportFoot;
+    request.allowed_time = allowed_time;
 
     ctl_.datastore().call<void>("ExternalFootstepPlanner::RequestPlan", static_cast<const Request &>(request));
     state_ = state;
+    requested_ = true;
   }
 
-  bool hasPlan(State state)
+  void cancelRequest()
+  {
+    // FIXME should handle cancelling the request on the planner side
+    requested_ = false;
+  }
+
+  bool planRequested(State state) const noexcept
+  {
+    return state_ == state && requested_;
+  }
+
+  bool hasPlan(State state) const
   {
     return state_ == state && ctl_.datastore().call<bool>("ExternalFootstepPlanner::HasPlan");
   }
@@ -76,7 +90,7 @@ struct ExternalPlanner
    *
    * @return lipm_walking::FootstepPlan The plan to be executed
    */
-  std::vector<lipm_walking::Contact> plan() const
+  std::vector<lipm_walking::Contact> plan()
   {
     auto convertPlan = [](const mc_plugin::ExternalFootstepPlanner::Plan & ext_plan) {
       std::vector<lipm_walking::Contact> contacts;
@@ -95,6 +109,7 @@ struct ExternalPlanner
       return contacts;
     };
 
+    requested_ = false;
     auto plan = ctl_.datastore().call<mc_plugin::ExternalFootstepPlanner::Plan>("ExternalFootstepPlanner::PopPlan");
     return convertPlan(plan);
   }
@@ -104,9 +119,32 @@ struct ExternalPlanner
     return state_;
   }
 
+  void allowedTimeSingleSupport(const double time)
+  {
+    allowedTimeSingleSupport_ = time;
+  }
+
+  double allowedTimeSingleSupport() const noexcept
+  {
+    return allowedTimeSingleSupport_;
+  }
+
+  void allowedTimeStanding(const double time)
+  {
+    allowedTimeStanding_ = time;
+  }
+
+  double allowedTimeStanding() const noexcept
+  {
+    return allowedTimeStanding_;
+  }
+
 protected:
   mc_control::MCController & ctl_;
   State state_ = State::Standing;
+  bool requested_ = false;
+  double allowedTimeSingleSupport_ = 0.5;
+  double allowedTimeStanding_ = 2.0;
 };
 
 } // namespace lipm_walking
