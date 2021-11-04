@@ -69,9 +69,6 @@ struct Standing : State
    */
   void checkPlanUpdates();
 
-  /** Handle requesting/receiving external plans */
-  void handleExternalPlan();
-
   /** Check transitions at beginning of control cycle.
    *
    */
@@ -102,15 +99,16 @@ protected:
    */
   void updatePlan(const std::string & name);
 
+  /** Handle requesting/receiving external plans */
+  void handleExternalPlan();
+
 private:
   Contact leftFootContact_; /**< Current left foot contact handle in plan */
   Contact rightFootContact_; /**< Current right foot contact handle in plan */
   Eigen::Vector3d copTarget_; /**< CoP target computed from GUI input */
-  bool planChanged_; /**< Has footstep plan changed? */
   bool startWalking_ = false; /**< Has the user clicked on "Start walking"? */
   std::vector<std::string> autoplay_plans_; /** Plans to play if config(autoplay) = true */
   double leftFootRatio_; /**< Left foot ratio from GUI input */
-  unsigned lastInterpolatorIter_; /**< Last iteration number of the plan interpolator */
 
   /* Tsuru add */
   lipm_walking::Contact supportContact_; // Keep the last contact foot stably.

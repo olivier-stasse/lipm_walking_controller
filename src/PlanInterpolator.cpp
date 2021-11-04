@@ -257,7 +257,7 @@ void PlanInterpolator::run()
     }
     runTurning_();
   }
-  nbIter++;
+  hasRun_ = true;
 }
 
 void PlanInterpolator::runWalking_()

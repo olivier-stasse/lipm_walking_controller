@@ -82,12 +82,8 @@ void states::Initial::runState()
     }
     else if(postureTaskWasActive_)
     {
-      internalReset();
-      postureTaskWasActive_ = false;
-    }
-    else
-    {
       showStartStandingButton();
+      postureTaskWasActive_ = false;
     }
   }
   else

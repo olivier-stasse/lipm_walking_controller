@@ -114,11 +114,6 @@ void states::DoubleSupport::start()
   logger().addLogEntry("rem_phase_time", [this]() { return remTime_; });
   logger().addLogEntry("walking_phase", []() { return 2.; });
 
-  if(stopDuringThisDSP_)
-  {
-    ctl.pauseWalking = false;
-  }
-
   runState(); // don't wait till next cycle to update reference and tasks
 }
 

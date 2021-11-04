@@ -53,8 +53,6 @@ void states::Standing::start()
   supportContact_ = ctl.supportContact();
   targetContact_ = ctl.targetContact();
 
-  planChanged_ = false;
-  lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
   leftFootRatio_ = ctl.leftFootRatio();
   startWalking_ = startWalking_ || ctl.config()("autoplay", false);
   ctl.isWalking = false;
@@ -84,6 +82,10 @@ void states::Standing::start()
   {
     updatePlan(ctl.plan.name);
   }
+  else
+  {
+    mc_rtc::log::info("[Standing] Walking is paused");
+  }
   updateTarget(leftFootRatio_);
 
   logger().addLogEntry("walking_phase", []() { return 3.; });
@@ -110,7 +112,6 @@ void states::Standing::start()
       std::string plan = plans[0];
       plans.erase(plans.begin());
       ctl.config().add("autoplay_plans", plans);
-      lastInterpolatorIter_++;
       updatePlan(plan);
     }
   }
@@ -118,22 +119,26 @@ void states::Standing::start()
   if(gui())
   {
     using namespace mc_rtc::gui;
-    gui()->removeElement({"Walking", "Main"}, "Pause walking");
-    gui()->addElement({"Walking", "Main"}, ComboInput("Footstep plan", ctl.planInterpolator.availablePlans(),
-                                                      [&ctl]() { return ctl.plan.name; },
-                                                      [this](const std::string & name) { updatePlan(name); }));
-    gui()->addElement({"Walking", "Main"}, Button((supportContact_.id == 0) ? "Start walking" : "Resume walking",
-                                                  [this]() { startWalking(); }));
-    gui()->addElement({"Standing"},
-                      NumberInput("CoM target [0-1]", [this]() { return std::round(leftFootRatio_ * 10.) / 10.; },
-                                  [this](double leftFootRatio) { updateTarget(leftFootRatio); }),
-                      Label("Left foot force [N]",
-                            [&ctl]() { return ctl.realRobot().forceSensor("LeftFootForceSensor").force().z(); }),
-                      Label("Right foot force [N]",
-                            [&ctl]() { return ctl.realRobot().forceSensor("RightFootForceSensor").force().z(); }),
-                      Button("Go to left foot", [this]() { updateTarget(1.); }),
-                      Button("Go to middle", [this]() { updateTarget(0.5); }),
-                      Button("Go to right foot", [this]() { updateTarget(0.); }));
+    auto & gui_ = *gui();
+    gui_.removeElement({"Walking", "Main"}, "Pause walking");
+    gui_.removeElement({"Walking", "Main"}, "Resume walking");
+    gui_.removeElement({"Walking", "Main"}, "Start walking");
+    gui_.addElement({"Walking", "Main"}, ComboInput("Footstep plan", ctl.planInterpolator.availablePlans(),
+                                                    [&ctl]() { return ctl.plan.name; },
+                                                    [this](const std::string & name) { updatePlan(name); }));
+    gui_.addElement({"Standing"},
+                    NumberInput("CoM target [0-1]", [this]() { return std::round(leftFootRatio_ * 10.) / 10.; },
+                                [this](double leftFootRatio) { updateTarget(leftFootRatio); }),
+                    Label("Left foot force [N]",
+                          [&ctl]() { return ctl.realRobot().forceSensor("LeftFootForceSensor").force().z(); }),
+                    Label("Right foot force [N]",
+                          [&ctl]() { return ctl.realRobot().forceSensor("RightFootForceSensor").force().z(); }),
+                    Button("Go to left foot", [this]() { updateTarget(1.); }),
+                    Button("Go to middle", [this]() { updateTarget(0.5); }),
+                    Button("Go to right foot", [this]() { updateTarget(0.); }));
+    gui_.addElement({"Walking", "Main"},
+                    Button(!controller().pauseWalking || (supportContact_.id == 0) ? "Start walking" : "Resume walking",
+                           [this]() { startWalking(); }));
   }
 
   runState(); // don't wait till next cycle to update reference and tasks
@@ -209,7 +214,6 @@ void states::Standing::handleExternalPlan()
     ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
     ctl.plan.rewind();
     updatePlan("external");
-    planChanged_ = true;
   }
 }
 
@@ -221,24 +225,9 @@ void states::Standing::checkPlanUpdates()
   {
     handleExternalPlan();
   }
-
-  if(ctl.planInterpolator.nbIter > lastInterpolatorIter_)
+  else if(ctl.planInterpolator.checkPlanUpdated())
   {
     ctl.loadFootstepPlan(ctl.planInterpolator.customPlanName());
-    lastInterpolatorIter_ = ctl.planInterpolator.nbIter;
-    planChanged_ = true;
-  }
-
-  if(planChanged_)
-  {
-    if(gui())
-    {
-      auto & gui_ = *gui();
-      gui_.removeElement({"Walking", "Main"}, "Resume walking");
-      gui_.removeElement({"Walking", "Main"}, "Start walking");
-      gui_.addElement({"Walking", "Main"}, mc_rtc::gui::Button("Start walking", [this]() { startWalking(); }));
-    }
-    planChanged_ = false;
   }
 }
 
@@ -288,6 +277,11 @@ void states::Standing::startWalking()
     return;
   }
   startWalking_ = true;
+  if(ctl.pauseWalking)
+  {
+    gui()->removeElement({"Walking", "Main"}, "Resume walking");
+    ctl.pauseWalking = false;
+  }
   gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Pause walking", [&ctl]() {
                       ctl.pauseWalkingCallback(/* verbose = */ false);
                     }));
@@ -318,7 +312,6 @@ void states::Standing::updatePlan(const std::string & name)
   {
     ctl.loadFootstepPlan(name);
   }
-  planChanged_ = true;
 }
 
 } // namespace lipm_walking
