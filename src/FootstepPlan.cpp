@@ -239,13 +239,24 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
     return polygons;
   };
 
-  gui.addElement(
-      {"Markers", "Footsteps", "Plan"},
-      Polygon("TargetContact", Color::Red, [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
-      Polygon("FootstepPlan Left", Color::Blue,
-              [this, contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
-      Polygon("FootstepPlan Right", Color::Green,
-              [this, contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
+  LineConfig leftPolygonConf;
+  leftPolygonConf.color = Color::Blue;
+  leftPolygonConf.width = 0.01;
+  leftPolygonConf.style = LineStyle::Dotted;
+  LineConfig rightPolygonConf = leftPolygonConf;
+  rightPolygonConf.color = Color::Red;
+  LineConfig targetContactPolygonConf = leftPolygonConf;
+  targetContactPolygonConf.color = Color::Green;
+  targetContactPolygonConf.width = 0.01;
+  targetContactPolygonConf.style = LineStyle::Solid;
+
+  gui.addElement({"Markers", "Footsteps", "Plan"},
+                 Polygon("TargetContact", targetContactPolygonConf,
+                         [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
+                 Polygon("FootstepPlan Left", leftPolygonConf,
+                         [this, contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
+                 Polygon("FootstepPlan Right", rightPolygonConf,
+                         [this, contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
 }
 
 void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
