@@ -178,41 +178,48 @@ void states::Standing::runState()
   ctl.stabilizer()->target(pendulum.com(), pendulum.comd(), pendulum.comdd(), pendulum.zmp());
 }
 
+void states::Standing::handleExternalPlan()
+{
+  using Foot = mc_plugin::ExternalFootstepPlanner::Foot;
+  auto & ctl = controller();
+
+  if(ctl.externalFootstepPlanner.planningRequested())
+  {
+    // Request a plan that should be received by the standing state
+    // e.g this means we will wait for the plan here before completing
+    const auto lf_start = utils::SE2d{controller().robot().surfacePose("LeftFootCenter")};
+    const auto rf_start = utils::SE2d{controller().robot().surfacePose("RightFootCenter")};
+
+    // XXX always starts with Left support foot
+    // Should probably record the last used support foot when entering standing state and start from the other foot
+    // instead to resume walk more naturally
+    ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::Standing, Foot::Left, lf_start,
+                                            rf_start); // ExternalPlanner::Standing, request);
+  }
+
+  if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::Standing))
+  {
+    // XXX temporary output
+    mc_rtc::log::info("[{}] Plan received", name());
+    auto contacts = ctl.externalFootstepPlanner.plan();
+    // Ensure that plan starts from the current feet configuration
+    const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
+    const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
+    ctl.plan.resetContacts(contacts);
+    ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
+    ctl.plan.rewind();
+    updatePlan("external");
+    planChanged_ = true;
+  }
+}
+
 void states::Standing::checkPlanUpdates()
 {
   auto & ctl = controller();
 
   if(ctl.plan.name == "external")
   {
-    using Foot = mc_plugin::ExternalFootstepPlanner::Foot;
-
-    if(ctl.externalFootstepPlanner.planningRequested())
-    {
-
-      // Request a plan that should be received by the standing state
-      // e.g this means we will wait for the plan here before completing
-      const auto lf_start = utils::SE2d{controller().robot().surfacePose("LeftFootCenter")};
-      const auto rf_start = utils::SE2d{controller().robot().surfacePose("RightFootCenter")};
-
-      // XXX always starts with Left support foot
-      // Should probably record the last used support foot when entering standing state and start from the other foot
-      // instead to resume walk more naturally
-      ctl.externalFootstepPlanner.requestPlan(ExternalPlanner::Standing, Foot::Left, lf_start,
-                                              rf_start); // ExternalPlanner::Standing, request);
-    }
-
-    if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::Standing))
-    {
-      mc_rtc::log::info("[{}] Plan received", name());
-      auto contacts = ctl.externalFootstepPlanner.plan();
-      // Ensure that plan starts from the current feet configuration
-      const sva::PTransformd & X_0_lf = controller().robot().surfacePose("LeftFootCenter");
-      const sva::PTransformd & X_0_rf = controller().robot().surfacePose("RightFootCenter");
-      ctl.plan.resetContacts(contacts);
-      ctl.plan.updateInitialTransform(X_0_lf, X_0_rf, 0);
-      ctl.plan.rewind();
-      updatePlan("external");
-    }
+    handleExternalPlan();
   }
 
   if(ctl.planInterpolator.nbIter > lastInterpolatorIter_)
@@ -226,9 +233,10 @@ void states::Standing::checkPlanUpdates()
   {
     if(gui())
     {
-      gui()->removeElement({"Walking", "Main"}, "Resume walking");
-      gui()->removeElement({"Walking", "Main"}, "Start walking");
-      gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Start walking", [this]() { startWalking(); }));
+      auto & gui_ = *gui();
+      gui_.removeElement({"Walking", "Main"}, "Resume walking");
+      gui_.removeElement({"Walking", "Main"}, "Start walking");
+      gui_.addElement({"Walking", "Main"}, mc_rtc::gui::Button("Start walking", [this]() { startWalking(); }));
     }
     planChanged_ = false;
   }

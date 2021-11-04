@@ -69,6 +69,9 @@ struct Standing : State
    */
   void checkPlanUpdates();
 
+  /** Handle requesting/receiving external plans */
+  void handleExternalPlan();
+
   /** Check transitions at beginning of control cycle.
    *
    */
