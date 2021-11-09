@@ -78,4 +78,4 @@ mc_control::GlobalPlugin::GlobalPluginConfiguration ExternalFootstepPlannerPlugi
 } // namespace ExternalFootstepPlanner
 } // namespace mc_plugin
 
-EXPORT_MC_RTC_PLUGIN("ExternalFootstepPlanner", mc_plugin::ExternalFootstepPlanner::ExternalFootstepPlannerPlugin)
+EXPORT_MC_RTC_PLUGIN("ExternalFootstepPlannerPlugin", mc_plugin::ExternalFootstepPlanner::ExternalFootstepPlannerPlugin)

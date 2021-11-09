@@ -1280,7 +1280,7 @@ states:
 transitions:
   - [Initial, Standing, WalkFSM]
   
-Plugins: [ExternalFootstepPlanner]
+Plugins: [ExternalFootstepPlannerPlugin]
 
 # Set realRobot's joint configuration from encoder readings
 ObserverPipelines:
