@@ -40,34 +40,37 @@ struct ExternalPlanner
     return ctl_.datastore().call<bool>("ExternalFootstepPlanner::PlanningRequested");
   }
 
+  /**
+   * @brief Request a plan to the plugin
+   *
+   * @note Since the planner usually takes time to find and send a solution, a plan typically needs to be requested
+   *       with a starting configuration corresponding to a future robot state. E.g when requesting a plan during the
+   *       SingleSupport phase, you'll want to request a plan with an initial Left/Right foot configuration
+   * corresponding to the (predicted) landing state in the next DoubleSupport phase. That way the planner will have time
+   * to compute the plan while the current SingleSupport phase executes (current step) and the requested plan should be
+   * available at the start of the next DoubleSupport phase
+   *
+   * @param state Walking state for which the computed plan is intended
+   * @param supportFoot Starting support foot (first swing foot will be the opposite foot)
+   * @param start_lf Starting configuration that the left foot will have in "state"
+   * @param start_rf Starting configuration for the right foot will have in "state"
+   * @param allowed_time Time allowed for the planner to compute a solution.
+   *  This should be less than the time available between when the request is made and when it is expected to be used.
+   *  Example:
+   *  - SingleSupport (0.7s), making a request at t=0.2s during the SingleSupport phase for a plan intended for the next
+   * DoubleSupport phase that is: requestPlan(DoubleSupport, <support foot for the next single support phase>, <left
+   * foot state in the next double support phase (landing state)>, <right foot state in the next double support phase
+   * (landing state)>, 0.3)
+   *  - This means we have 0.5s available to compute until the DoubleSupport phase.
+   *  - Accounting for communication time with the planner, allowed_time<=0.4s would be a reasonable choice.
+   *    Also note that setting a time as small as possible while ensuring that the planner will find a solution is
+   * preferable as it gives more time-span available to request a new plan.
+   */
   void requestPlan(const State state,
                    const Foot supportFoot,
                    const utils::SE2d & start_lf,
                    const utils::SE2d & start_rf,
-                   double allowed_time)
-  {
-    Request request;
-    request.start_left_foot = {start_lf.x, start_lf.y, start_lf.theta};
-    request.start_right_foot = {start_rf.x, start_rf.y, start_rf.theta};
-
-    // Compute goal with nominal foot standing width
-    auto target = ctl_.datastore().call<mc_plugin::ExternalFootstepPlanner::SE2d>("ExternalFootstepPlanner::Target");
-    auto goal = utils::SE2d{target.x, target.y, target.theta};
-    double width = 0.2; // XXX hardcoded
-    auto lfOffset = utils::SE2d{0., width / 2, 0.0};
-    auto rfOffset = utils::SE2d{0., -width / 2, 0.0};
-    auto lfGoal = utils::SE2d(lfOffset.asPTransform() * goal.asPTransform());
-    auto rfGoal = utils::SE2d(rfOffset.asPTransform() * goal.asPTransform());
-
-    request.goal_left_foot = {lfGoal.x, lfGoal.y, lfGoal.theta};
-    request.goal_right_foot = {rfGoal.x, rfGoal.y, rfGoal.theta};
-    request.support_foot = supportFoot;
-    request.allowed_time = allowed_time;
-
-    ctl_.datastore().call<void>("ExternalFootstepPlanner::RequestPlan", static_cast<const Request &>(request));
-    state_ = state;
-    requested_ = true;
-  }
+                   double allowed_time);
 
   void cancelRequest()
   {
@@ -90,29 +93,7 @@ struct ExternalPlanner
    *
    * @return lipm_walking::FootstepPlan The plan to be executed
    */
-  std::vector<lipm_walking::Contact> plan()
-  {
-    auto convertPlan = [](const mc_plugin::ExternalFootstepPlanner::Plan & ext_plan) {
-      std::vector<lipm_walking::Contact> contacts;
-      unsigned i = 0;
-      for(const auto & ext_contact : ext_plan.contacts)
-      {
-        auto contact = lipm_walking::Contact{};
-        // contact.
-        // plan.contacts.push_back()
-        contact.surfaceName = (ext_contact.foot == Foot::Right ? "RightFootCenter" : "LeftFootCenter");
-        utils::SE2d pose2D = {ext_contact.pose.x, ext_contact.pose.y, ext_contact.pose.theta};
-        contact.pose = pose2D.asPTransform();
-        contact.id = i++;
-        contacts.push_back(contact);
-      }
-      return contacts;
-    };
-
-    requested_ = false;
-    auto plan = ctl_.datastore().call<mc_plugin::ExternalFootstepPlanner::Plan>("ExternalFootstepPlanner::PopPlan");
-    return convertPlan(plan);
-  }
+  std::vector<lipm_walking::Contact> plan();
 
   State state() const
   {
