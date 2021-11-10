@@ -84,8 +84,12 @@ protected:
   std::unique_ptr<ExternalFootstepPlanner> planner_{nullptr}; ///< Planner implementation
   bool wasAvailable_ = false; ///< True if the planner was active during the previous iteration
 
-  bool targetChanged_ = false; ///< True if the requested target has changed (either through the GUI or other means)
-  SE2d target_; ///< Requested target
+  bool worldPositionTargetChanged_ =
+      false; ///< True if the requested target has changed (either through the GUI or other means)
+  SE2d worldPositionTarget_{}; ///< Requested target
+
+  bool localPositionTargetChanged_{false};
+  SE2d localPositionTarget_{};
 };
 
 } // namespace ExternalFootstepPlanner

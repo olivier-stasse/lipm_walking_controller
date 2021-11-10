@@ -46,12 +46,7 @@ Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
   auto planConfig = config("plans")(controlRobot().name());
   if(planConfig.has("external"))
   {
-    if(planConfig("external").has("allowed_planning_time"))
-    {
-      auto planningConf = planConfig("external")("allowed_planning_time");
-      externalFootstepPlanner.allowedTimeSingleSupport(planningConf("single_support", 0.5));
-      externalFootstepPlanner.allowedTimeStanding(planningConf("standing", 2.0));
-    }
+    externalFootstepPlanner.configure(planConfig("external"));
   }
 
   mc_rtc::log::info("Loading default stabilizer configuration");

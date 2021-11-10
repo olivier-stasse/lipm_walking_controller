@@ -1,4 +1,5 @@
 #pragma once
+#include <Eigen/Core>
 #include <ostream>
 
 namespace mc_plugin
@@ -12,6 +13,9 @@ struct SE2d
   double x = 0;
   double y = 0;
   double theta = 0;
+  SE2d() {}
+  SE2d(double x, double y, double theta) : x(x), y(y), theta(theta) {}
+  SE2d(const Eigen::Vector3d & v) : x(v.x()), y(v.y()), theta(v.z()) {}
 };
 
 } // namespace ExternalFootstepPlanner

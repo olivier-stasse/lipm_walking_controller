@@ -29,11 +29,28 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   ctl.datastore().make_call("ExternalFootstepPlanner::Activate", [this, &gui]() { activate(gui); });
   ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this, &gui]() { deactivate(gui); });
   // Do we need replanning?
-  ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested", [this]() { return targetChanged_; });
-  ctl.datastore().make_call("ExternalFootstepPlanner::Target", [this]() { return target_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested",
+                            [this]() { return worldPositionTargetChanged_ || localPositionTargetChanged_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTargetChanged",
+                            [this]() { return worldPositionTargetChanged_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTarget",
+                            [this]() -> const SE2d & { return worldPositionTarget_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::LocalPositionTargetChanged",
+                            [this]() { return localPositionTargetChanged_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::LocalPositionTarget",
+                            [this]() -> const SE2d & { return localPositionTarget_; });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetWorldPositionTarget", [this](const SE2d & worldTarget) {
+    worldPositionTargetChanged_ = true;
+    worldPositionTarget_ = worldTarget;
+  });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetLocalPositionTarget", [this](const SE2d & localTarget) {
+    localPositionTargetChanged_ = true;
+    localPositionTarget_ = localTarget;
+  });
   // Call this to request a new plan
   ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan", [this](const Request & request) {
-    targetChanged_ = false;
+    worldPositionTargetChanged_ = false;
+    localPositionTargetChanged_ = false;
     planner_->requestPlan(request);
   });
   ctl.datastore().make_call("ExternalFootstepPlanner::HasPlan", [this]() { return planner_->hasPlan(); });
@@ -123,16 +140,27 @@ void ExternalFootstepPlannerPlugin::deactivate(mc_rtc::gui::StateBuilder & gui)
 void ExternalFootstepPlannerPlugin::addPlannerGUI(mc_rtc::gui::StateBuilder & gui)
 {
   using namespace mc_rtc::gui;
-  gui.addElement(category_, XYTheta("World target [m, rad]",
-                                    [this]() -> std::array<double, 4> {
-                                      return {target_.x, target_.y, target_.theta, 0.};
-                                    },
-                                    [this](const std::array<double, 4> & target) {
-                                      target_.x = target[0];
-                                      target_.y = target[1];
-                                      target_.theta = target[2];
-                                      targetChanged_ = true;
-                                    }));
+  gui.addElement(category_,
+                 XYTheta("World target [m, rad]",
+                         [this]() -> std::array<double, 4> {
+                           return {worldPositionTarget_.x, worldPositionTarget_.y, worldPositionTarget_.theta, 0.};
+                         },
+                         [this](const std::array<double, 4> & target) {
+                           worldPositionTarget_.x = target[0];
+                           worldPositionTarget_.y = target[1];
+                           worldPositionTarget_.theta = target[2];
+                           worldPositionTargetChanged_ = true;
+                         }),
+                 ArrayInput("Local target [m, rad]",
+                            [this]() -> std::array<double, 3> {
+                              return {localPositionTarget_.x, localPositionTarget_.y, localPositionTarget_.theta};
+                            },
+                            [this](const std::array<double, 3> & target) {
+                              localPositionTarget_.x = target[0];
+                              localPositionTarget_.y = target[1];
+                              localPositionTarget_.theta = target[2];
+                              localPositionTargetChanged_ = true;
+                            }));
 }
 
 void ExternalFootstepPlannerPlugin::removePlannerGUI(mc_rtc::gui::StateBuilder & gui)

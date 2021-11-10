@@ -55,6 +55,8 @@ struct SE2d
    */
   SE2d(double x = 0., double y = 0., double theta = 0.) : x(x), y(y), theta(theta) {}
 
+  SE2d(const Eigen::Vector3d & v) : x(v.x()), y(v.y()), theta(v.z()) {}
+
   /** Initialize a new SE2 transform.
    *
    * Assumes that rotation is around the +z axis

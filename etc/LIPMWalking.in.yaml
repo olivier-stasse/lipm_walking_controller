@@ -654,6 +654,9 @@ plans:
         - pose:
             translation: [0.035, 0.07, 0.0]
           surface: LeftFootCenter
+      # Offset (x,y,theta) between the plan's target frame and the left/right foot expressed in target frame
+      leftFootLandingOffset: [0.0, 0.07, 0.0] # x, y, theta
+      rightFootLandingOffset: [0.0, -0.07, 0.0] # x, y, theta
   hrp2_drc:
     ashibumi: # stepping in place
       double_support_duration: 0.2
