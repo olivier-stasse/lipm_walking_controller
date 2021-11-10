@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mc_rtc/gui/StateBuilder.h>
+
 #include <ExternalFootstepPlanner/Plan.h>
 #include <ExternalFootstepPlanner/Request.h>
 
@@ -13,6 +15,7 @@ namespace ExternalFootstepPlanner
  */
 struct ExternalFootstepPlanner
 {
+  virtual void configure(const mc_rtc::Configuration &){};
   /**
    * @brief
    *
@@ -23,6 +26,11 @@ struct ExternalFootstepPlanner
   virtual bool hasPlan() const noexcept = 0;
   virtual Plan popPlan() = 0;
   virtual std::string name() const = 0;
+  virtual bool available() const = 0;
+  virtual void addToGUI(mc_rtc::gui::StateBuilder &){};
+  virtual void removeFromGUI(mc_rtc::gui::StateBuilder &){};
+  virtual void activate() = 0;
+  virtual void deactivate() = 0;
 };
 
 } // namespace ExternalFootstepPlanner

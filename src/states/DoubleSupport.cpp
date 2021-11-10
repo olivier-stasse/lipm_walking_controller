@@ -43,7 +43,8 @@ void states::DoubleSupport::handleExternalPlan()
   }
   else if(ctl.externalFootstepPlanner.planRequested(ExternalPlanner::DoubleSupport))
   {
-    mc_rtc::log::warning("[{}] An external plan was requested for this DSP but is not available, pause walking");
+    mc_rtc::log::warning("[{}] An external plan was requested for this DSP but is not available, pause walking",
+                         name());
     ctl.externalFootstepPlanner.cancelRequest();
     stopDuringThisDSP_ = true;
     ctl.pauseWalking = true;
@@ -60,9 +61,9 @@ void states::DoubleSupport::start()
   initLeftFootRatio_ = ctl.leftFootRatio();
   if(phaseDuration <= ctl.timeStep)
   {
-    mc_rtc::log::error_and_throw<std::invalid_argument>("[DoubleSupport] The double support phase duration cannot be "
+    mc_rtc::log::error_and_throw<std::invalid_argument>("[{}] The double support phase duration cannot be "
                                                         "less than the controller's timestep (requested {} <= {})",
-                                                        duration_, ctl.timeStep);
+                                                        name(), duration_, ctl.timeStep);
   }
   remTime_ = duration_;
   stateTime_ = 0.;

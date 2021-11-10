@@ -46,4 +46,4 @@ add_plugin(ExternalFootstepPlannerPlugin "${ExternalFootstepPlanner_SRC}" "${Ext
 target_include_directories(ExternalFootstepPlannerPlugin PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(ExternalFootstepPlannerPlugin PUBLIC mc_rtc::mc_rtc_ros PkgConfig::mc_plugin_footstep_plan_msgs ExternalFootstepPlanner_data)
 set_target_properties(ExternalFootstepPlannerPlugin PROPERTIES OUTPUT_NAME ExternalFootstepPlanner)
-install(FILES etc/ExternalFootstepPlanner.yaml DESTINATION ${MC_PLUGINS_RUNTIME_INSTALL_PREFIX}/etc/)
+install(FILES etc/ExternalFootstepPlannerPlugin.yaml DESTINATION ${MC_PLUGINS_RUNTIME_INSTALL_PREFIX}/etc/)

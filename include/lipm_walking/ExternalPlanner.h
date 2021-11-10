@@ -139,6 +139,16 @@ struct ExternalPlanner
     return allowedTimeStanding_;
   }
 
+  void activate()
+  {
+    ctl_.datastore().call<void>("ExternalFootstepPlanner::Activate");
+  }
+
+  void deactivate()
+  {
+    ctl_.datastore().call<void>("ExternalFootstepPlanner::Deactivate");
+  }
+
 protected:
   mc_control::MCController & ctl_;
   State state_ = State::Standing;

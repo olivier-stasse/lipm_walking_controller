@@ -1,0 +1,12 @@
+category: ["Walking", "Main", "External Planning"]
+
+# Configuration for the OnlineFootstepPlanner
+OnlineFootstepPlanner:
+  rate: 30
+  verbose: false
+  # Skipped requests are to be expected given that the planner currently has no way to cancel the current requests computation
+  # In practice this happens:
+  # - When sending multiple requests in a row by moving the GUI target
+  # - When sending multiple requests through continuous joystick use
+  # In this case the latest request will be picked up once the previous requested plan has completed, and all other requests in between will be ignored. 
+  ignore_skipped_requests: true

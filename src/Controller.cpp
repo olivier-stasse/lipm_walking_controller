@@ -469,6 +469,18 @@ void Controller::loadFootstepPlan(std::string name)
 
 void Controller::updatePlan(const std::string & name)
 {
+  if(name == "external")
+  {
+    planInterpolator.removeGUIElements();
+    externalFootstepPlanner.activate();
+    loadFootstepPlan(name);
+    return;
+  }
+  if(plan.name == "external")
+  {
+    externalFootstepPlanner.deactivate();
+  }
+
   planInterpolator.removeGUIElements();
   if(name.find("custom") != std::string::npos)
   {

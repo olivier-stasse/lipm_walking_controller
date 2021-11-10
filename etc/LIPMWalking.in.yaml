@@ -629,9 +629,22 @@ plans:
     external:
       double_support_duration: 0.5
       single_support_duration: 0.7
+      ####
+      # Configures the maximum allowed time for the planner to compute a solution.
+      # If the planner could not compute a plan in the allowed time, the robot will pause walking until a new request
+      # is sent and successful.
+      # If the robot pauses walking too often, try increasing this parameter.
+      ####
       allowed_planning_time:
+        # the maximum allowed time during standing may be arbitrarely large (we don't need to react fast)
+        # This corresponds to the absolute maximum time that the user will have to wait for a plan (or notification of failure)
         standing: 2.0
-        single_support: 0.5 # must be less than single_support_duration and have sufficient margin to account for communication time with the planner
+        # the maximum allowed time during single support should be as short as possible but still ensure that in normal operations
+        # the planner has enough time to come up with a solution.
+        # This parameter MUST BE less than single_support_duration, and allow a sufficient margin to account for communication delay with the planner
+        # - reducing it increases reactivity (we have a longer window of opportunity during which the single support phase can request a plan)
+        # - increasing it decrases reactivity but increases the likelyhood that the planner will successfully find a solution
+        single_support: 0.2
       swing_height: 0.04
       com_height: 0.817301
       contacts:
@@ -1279,7 +1292,7 @@ states:
 
 transitions:
   - [Initial, Standing, WalkFSM]
-  
+
 Plugins: [ExternalFootstepPlannerPlugin]
 
 # Set realRobot's joint configuration from encoder readings

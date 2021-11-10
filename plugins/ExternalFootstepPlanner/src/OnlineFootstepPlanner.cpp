@@ -19,15 +19,36 @@ namespace ExternalFootstepPlanner
 using FootStepPlanRequestService = mc_plugin_footstep_plan_msgs::FootStepPlanRequestService;
 using FootStep = mc_plugin_footstep_plan_msgs::FootStep;
 
-OnlineFootstepPlanner::OnlineFootstepPlanner()
-{
-  rosThread_ = std::thread(&OnlineFootstepPlanner::rosThread, this);
-}
+OnlineFootstepPlanner::OnlineFootstepPlanner() {}
 
 OnlineFootstepPlanner::~OnlineFootstepPlanner()
 {
+  deactivate();
+}
+
+void OnlineFootstepPlanner::configure(const mc_rtc::Configuration & config)
+{
+  config("rate", rate_);
+  config("verbose", verbose_);
+  config("ignore_skipped_requests", ignore_skipped_requests_);
+}
+
+void OnlineFootstepPlanner::activate()
+{
+  if(verbose_) mc_rtc::log::info("[{}] activating...", name());
+  run_ = true;
+  rosThread_ = std::thread(&OnlineFootstepPlanner::rosThread, this);
+  activated_ = true;
+  if(verbose_) mc_rtc::log::success("[{}] activated", name());
+}
+
+void OnlineFootstepPlanner::deactivate()
+{
+  if(verbose_) mc_rtc::log::info("[{}] deactivating...", name());
+  activated_ = false;
   run_ = false;
   rosThread_.join();
+  if(verbose_) mc_rtc::log::success("[{}] deactivated", name());
 }
 
 void OnlineFootstepPlanner::rosThread()
@@ -46,6 +67,7 @@ void OnlineFootstepPlanner::rosThread()
   ros::Rate rate(rate_);
   while(ros::ok() && run_)
   {
+    available_ = ros::service::exists(footstep_service_topic_, false);
     if(planRequested_)
     {
       planReceived_ = false;
@@ -107,7 +129,10 @@ void OnlineFootstepPlanner::rosThread()
       auto plan = futurePlan.get();
       if(plan)
       {
-        mc_rtc::log::info("[{}] Received plan:\n{}", name(), plan.get());
+        if(verbose_)
+        {
+          mc_rtc::log::info("[{}] Received plan:\n{}", name(), plan.get());
+        }
         {
           std::lock_guard<std::mutex> lock{planMutex_};
           plan_ = plan.get();
@@ -124,10 +149,11 @@ void OnlineFootstepPlanner::requestPlan(const Request & request)
 {
   // request plan in ROS thread
   // Or set up planner here directly
-  mc_rtc::log::info("[{}] Requesting plan", name());
+  if(verbose_) mc_rtc::log::info("[{}] Requesting plan", name());
   if(planRequested_)
   {
-    mc_rtc::log::warning("[{}] Couldn't request plan as a plan is already being computed by the planner", name());
+    if(!ignore_skipped_requests_)
+      mc_rtc::log::warning("[{}] Couldn't request plan as a plan is already being computed by the planner", name());
   }
   else
   {
@@ -150,7 +176,7 @@ bool OnlineFootstepPlanner::hasPlan() const noexcept
 
 Plan OnlineFootstepPlanner::popPlan()
 {
-  mc_rtc::log::info("[{}] Getting plan", name());
+  if(verbose_) mc_rtc::log::info("[{}] Getting plan", name());
   std::lock_guard<std::mutex> lock{planMutex_};
   planReceived_ = false;
   return std::move(plan_); // plan_ is invalid after this

@@ -213,7 +213,6 @@ void states::Standing::handleExternalPlan()
      || ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::DoubleSupport))
   {
     // If we have received a plan requested during this Standing phase or the previous DoubleSupport phase
-    mc_rtc::log::info("[{}] Plan received", name());
     ctl.plan.resetContacts(ctl.externalFootstepPlanner.plan());
     ctl.updatePlan("external");
   }
