@@ -334,10 +334,6 @@ private:
    */
   void updateWorldTarget_(const Eigen::Vector3d & desired);
 
-public:
-  bool online = true; // Tsuru added. It is used for online footstep replanning.
-  bool goal_online_update = true; // Tsuru added. It is used for online goal updating.
-
 private:
   FootstepPlan customPlan_;
   Gait gait_ = Gait::Walk;
