@@ -97,6 +97,16 @@ protected:
   void setLocalVelocityTarget(const SE2d & velocityTarget);
 
   /**
+   * @brief Sets the maximal distance away from the local frame that we ask the planner for
+   *
+   * This parameter has a significant influence in how the planner behaves. In particular setting a short distance leads
+   * to more natural "velocity control" behaviour, while setting a large distance makes the planning less responsive.
+   *
+   * @param distance
+   */
+  void setLocalVelocityPlanningDistance(const SE2d & distance);
+
+  /**
    * @brief Add GUI elements that are visible when the planner is available
    */
   void addPlannerGUI();
@@ -138,6 +148,7 @@ protected:
   SE2d localPositionTarget_{};
 
   SE2d localVelocityTarget_{};
+  SE2d planningDistance_{0.3, 0.3, mc_rtc::constants::PI / 2}; // How far ahead should we plan?
 };
 
 } // namespace ExternalFootstepPlanner

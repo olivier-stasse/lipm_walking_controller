@@ -1,4 +1,5 @@
 #include <mc_control/GlobalPluginMacros.h>
+#include <mc_filter/utils/clamp.h>
 #include <mc_rtc/io_utils.h>
 #include <mc_rtc/ros.h>
 
@@ -21,6 +22,14 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   this->gui_ = ctl.gui();
   config_ = config;
   config("category", category_);
+  if(config.has("velocity_target"))
+  {
+    if(config("velocity_target").has("planning_distance"))
+    {
+      std::array<double, 3> distance = config("velocity_target")("planning_distance");
+      setLocalVelocityPlanningDistance({distance[0], distance[1], distance[2]});
+    }
+  }
 
   auto plannerName = config("planner", std::string{"OnlineFootstepPlanner"});
   changePlanner(plannerName);
@@ -39,14 +48,15 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
                             [this]() { return localPositionTargetChanged_; });
   ctl.datastore().make_call("ExternalFootstepPlanner::LocalPositionTarget",
                             [this]() -> const SE2d & { return localPositionTarget_; });
-  ctl.datastore().make_call("ExternalFootstepPlanner::SetWorldPositionTarget", [this](const SE2d & worldTarget) {
-    worldPositionTargetChanged_ = true;
-    worldPositionTarget_ = worldTarget;
-  });
-  ctl.datastore().make_call("ExternalFootstepPlanner::SetLocalPositionTarget", [this](const SE2d & localTarget) {
-    localPositionTargetChanged_ = true;
-    localPositionTarget_ = localTarget;
-  });
+
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetTargetType",
+                            [this](const std::string & targetType) { changeTargetType(targetType); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetWorldPositionTarget",
+                            [this](const SE2d & worldTarget) { setWorldPositionTarget(worldTarget); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetLocalPositionTarget",
+                            [this](const SE2d & localTarget) { setLocalPositionTarget(localTarget); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetLocalVelocityTarget",
+                            [this](const SE2d & localVelocity) { setLocalVelocityTarget(localVelocity); });
   // Call this to request a new plan
   ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan", [this](const Request & request) {
     worldPositionTargetChanged_ = false;
@@ -128,8 +138,21 @@ void ExternalFootstepPlannerPlugin::setLocalVelocityTarget(const SE2d & localVel
   setLocalPositionTarget(localVelocity);
 }
 
+void ExternalFootstepPlannerPlugin::setLocalVelocityPlanningDistance(const SE2d & distance)
+{
+  planningDistance_.x = std::fabs(distance.x);
+  planningDistance_.y = std::fabs(distance.y);
+  planningDistance_.theta = std::fabs(distance.theta);
+  mc_filter::utils::clampInPlace(localVelocityTarget_.x, -planningDistance_.x, planningDistance_.x);
+  mc_filter::utils::clampInPlace(localVelocityTarget_.y, -planningDistance_.y, planningDistance_.y);
+  mc_filter::utils::clampInPlace(localVelocityTarget_.theta, -planningDistance_.theta, planningDistance_.theta);
+  setLocalVelocityTarget(localVelocityTarget_);
+}
+
 void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetType)
 {
+  if(!planner_) return;
+
   using namespace mc_rtc::gui;
   auto & gui = *gui_;
   std::vector<std::string> category = category_;
@@ -160,25 +183,40 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
   else if(targetType == "Local Velocity")
   {
     mc_rtc::log::warning("[{}] Local Veloctity target is not implemented yet.", name());
-    gui.addElement(category,
-                   NumberSlider("Local Velocity [x]", [this]() { return localVelocityTarget_.x; },
-                                [this](double vx) {
-                                  localVelocityTarget_.x = vx;
-                                  setLocalVelocityTarget(localVelocityTarget_);
-                                },
-                                -1, 1),
-                   NumberSlider("Local Velocity [y]", [this]() { return localVelocityTarget_.y; },
-                                [this](double vy) {
-                                  localVelocityTarget_.y = vy;
-                                  setLocalVelocityTarget(localVelocityTarget_);
-                                },
-                                -1, 1),
-                   NumberSlider("Local Velocity [theta]", [this]() { return localVelocityTarget_.theta; },
-                                [this](double vy) {
-                                  localVelocityTarget_.theta = vy;
-                                  setLocalVelocityTarget(localVelocityTarget_);
-                                },
-                                -1, 1));
+    auto makeSliders = [this, category, &gui]() {
+      gui.removeElement(category, "Local Velocity [x]");
+      gui.removeElement(category, "Local Velocity [y]");
+      gui.removeElement(category, "Local Velocity [theta]");
+      gui.addElement(category,
+                     NumberSlider("Local Velocity [x]", [this]() { return localVelocityTarget_.x; },
+                                  [this](double vx) {
+                                    localVelocityTarget_.x = vx;
+                                    setLocalVelocityTarget(localVelocityTarget_);
+                                  },
+                                  -planningDistance_.x, planningDistance_.x),
+                     NumberSlider("Local Velocity [y]", [this]() { return localVelocityTarget_.y; },
+                                  [this](double vy) {
+                                    localVelocityTarget_.y = vy;
+                                    setLocalVelocityTarget(localVelocityTarget_);
+                                  },
+                                  -planningDistance_.y, planningDistance_.y),
+                     NumberSlider("Local Velocity [theta]", [this]() { return localVelocityTarget_.theta; },
+                                  [this](double vy) {
+                                    localVelocityTarget_.theta = vy;
+                                    setLocalVelocityTarget(localVelocityTarget_);
+                                  },
+                                  -planningDistance_.theta, planningDistance_.theta));
+    };
+
+    makeSliders();
+    gui.addElement(category, ArrayInput("Planning Distance", {"x [m]", "y [m]", "theta [rad]"},
+                                        [this]() -> std::array<double, 3> {
+                                          return {planningDistance_.x, planningDistance_.y, planningDistance_.theta};
+                                        },
+                                        [this, makeSliders](const std::array<double, 3> & d) {
+                                          setLocalVelocityPlanningDistance({d[0], d[1], d[2]});
+                                          makeSliders();
+                                        }));
   }
   else
   {
