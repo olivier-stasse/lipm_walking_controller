@@ -18,7 +18,7 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
 {
   using namespace mc_rtc::gui;
   auto & ctl = gc.controller();
-  auto & gui = *ctl.gui();
+  this->gui_ = ctl.gui();
   config_ = config;
   config("category", category_);
 
@@ -26,8 +26,8 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   changePlanner(plannerName);
 
   ctl.datastore().make_call("ExternalFootstepPlanner::Available", [this]() { return planner_->available(); });
-  ctl.datastore().make_call("ExternalFootstepPlanner::Activate", [this, &gui]() { activate(gui); });
-  ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this, &gui]() { deactivate(gui); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::Activate", [this]() { activate(); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this]() { deactivate(); });
   // Do we need replanning?
   ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested",
                             [this]() { return worldPositionTargetChanged_ || localPositionTargetChanged_; });
@@ -65,18 +65,16 @@ void ExternalFootstepPlannerPlugin::reset(mc_control::MCGlobalController &)
   mc_rtc::log::success("[{}] Plugin reset", name());
 }
 
-void ExternalFootstepPlannerPlugin::before(mc_control::MCGlobalController & gc)
+void ExternalFootstepPlannerPlugin::before(mc_control::MCGlobalController & /* gc */)
 {
-  auto & ctl = gc.controller();
-  auto & gui = *ctl.gui();
   if(wasAvailable_ && !planner_->available())
   {
-    removePlannerGUI(gui);
+    removePlannerGUI();
     wasAvailable_ = false;
   }
   else if(!wasAvailable_ && planner_->available())
   {
-    addPlannerGUI(gui);
+    addPlannerGUI();
     wasAvailable_ = true;
   }
 }
@@ -113,11 +111,60 @@ void ExternalFootstepPlannerPlugin::changePlanner(const std::string & plannerNam
   mc_rtc::log::success("[{}] Changed planner to {}", name(), plannerName);
 }
 
-void ExternalFootstepPlannerPlugin::activate(mc_rtc::gui::StateBuilder & gui)
+void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetType)
+{
+  using namespace mc_rtc::gui;
+  auto & gui = *gui_;
+  std::vector<std::string> category = category_;
+  category.push_back("Target");
+  gui.removeCategory(category);
+  if(targetType == "World SE2")
+  {
+    gui.addElement(category,
+                   XYTheta("World target [m, rad]",
+                           [this]() -> std::array<double, 4> {
+                             return {worldPositionTarget_.x, worldPositionTarget_.y, worldPositionTarget_.theta, 0.};
+                           },
+                           [this](const std::array<double, 4> & target) {
+                             worldPositionTarget_.x = target[0];
+                             worldPositionTarget_.y = target[1];
+                             worldPositionTarget_.theta = target[2];
+                             worldPositionTargetChanged_ = true;
+                           }));
+  }
+  else if(targetType == "Local SE2")
+  {
+    gui.addElement(category,
+                   ArrayInput("Local target [m, rad]",
+                              [this]() -> std::array<double, 3> {
+                                return {localPositionTarget_.x, localPositionTarget_.y, localPositionTarget_.theta};
+                              },
+                              [this](const std::array<double, 3> & target) {
+                                localPositionTarget_.x = target[0];
+                                localPositionTarget_.y = target[1];
+                                localPositionTarget_.theta = target[2];
+                                localPositionTargetChanged_ = true;
+                              }));
+  }
+  else if(targetType == "Local Velocity")
+  {
+    mc_rtc::log::warning("[{}] Local Veloctity target is not implemented yet.", name());
+  }
+  else
+  {
+    mc_rtc::log::error_and_throw<std::invalid_argument>("[{}] Target type {} is not supported (supported: {})", name(),
+                                                        mc_rtc::io::to_string(supportedTargetTypes_));
+    return;
+  }
+  targetType_ = targetType;
+}
+
+void ExternalFootstepPlannerPlugin::activate()
 {
   if(activated_) return;
 
   using namespace mc_rtc::gui;
+  auto & gui = *gui_;
   gui.addElement(category_, ComboInput("Planner", supportedPlanners_, [this]() { return plannerName_; },
                                        [this](const std::string & planner) { changePlanner(planner); }));
   gui.addElement(category_, Label("Available?", [this]() { return planner_->available(); }));
@@ -125,48 +172,36 @@ void ExternalFootstepPlannerPlugin::activate(mc_rtc::gui::StateBuilder & gui)
   activated_ = true;
 }
 
-void ExternalFootstepPlannerPlugin::deactivate(mc_rtc::gui::StateBuilder & gui)
+void ExternalFootstepPlannerPlugin::deactivate()
 {
   if(!activated_) return;
   using namespace mc_rtc::gui;
+  auto & gui = *gui_;
   gui.removeElement(category_, "Planner");
   gui.removeElement(category_, "Available?");
-  removePlannerGUI(gui);
+  removePlannerGUI();
   planner_->deactivate();
   activated_ = false;
   wasAvailable_ = false;
 }
 
-void ExternalFootstepPlannerPlugin::addPlannerGUI(mc_rtc::gui::StateBuilder & gui)
+void ExternalFootstepPlannerPlugin::addPlannerGUI()
 {
   using namespace mc_rtc::gui;
-  gui.addElement(category_,
-                 XYTheta("World target [m, rad]",
-                         [this]() -> std::array<double, 4> {
-                           return {worldPositionTarget_.x, worldPositionTarget_.y, worldPositionTarget_.theta, 0.};
-                         },
-                         [this](const std::array<double, 4> & target) {
-                           worldPositionTarget_.x = target[0];
-                           worldPositionTarget_.y = target[1];
-                           worldPositionTarget_.theta = target[2];
-                           worldPositionTargetChanged_ = true;
-                         }),
-                 ArrayInput("Local target [m, rad]",
-                            [this]() -> std::array<double, 3> {
-                              return {localPositionTarget_.x, localPositionTarget_.y, localPositionTarget_.theta};
-                            },
-                            [this](const std::array<double, 3> & target) {
-                              localPositionTarget_.x = target[0];
-                              localPositionTarget_.y = target[1];
-                              localPositionTarget_.theta = target[2];
-                              localPositionTargetChanged_ = true;
-                            }));
+  auto & gui = *gui_;
+  gui.addElement(category_, ComboInput("Target type", supportedTargetTypes_, [this]() { return targetType_; },
+                                       [this](const std::string & targetType) { changeTargetType(targetType); }));
+  changeTargetType(targetType_);
 }
 
-void ExternalFootstepPlannerPlugin::removePlannerGUI(mc_rtc::gui::StateBuilder & gui)
+void ExternalFootstepPlannerPlugin::removePlannerGUI()
 {
   using namespace mc_rtc::gui;
-  gui.removeElement(category_, "World target [m, rad]");
+  auto & gui = *gui_;
+  auto category = category_;
+  category.push_back("Target");
+  gui.removeCategory(category);
+  gui.removeElement(category_, "Target type");
 }
 
 } // namespace ExternalFootstepPlanner

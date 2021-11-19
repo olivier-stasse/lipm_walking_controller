@@ -54,26 +54,28 @@ struct ExternalFootstepPlannerPlugin : public mc_control::GlobalPlugin
 
 protected:
   void changePlanner(const std::string & plannerName);
+  void changeTargetType(const std::string & targetType);
   /**
    * @brief Add GUI elements that are visible when the planner is available
    */
-  void addPlannerGUI(mc_rtc::gui::StateBuilder & gui);
+  void addPlannerGUI();
   /**
    * @brief Remove elements added by addPlannerGUI()
    */
-  void removePlannerGUI(mc_rtc::gui::StateBuilder & gui);
+  void removePlannerGUI();
   /**
    * @brief Activates the plugin (add it to the GUI) and the planner
    */
-  void activate(mc_rtc::gui::StateBuilder & gui);
+  void activate();
   /**
    * @brief Deactivate the plugin and the planner
    *
    * Can be reactivated by activate()
    */
-  void deactivate(mc_rtc::gui::StateBuilder & gui);
+  void deactivate();
 
 protected:
+  std::shared_ptr<mc_rtc::gui::StateBuilder> gui_{nullptr};
   bool activated_ = false; ///< Whether this plugin is active
   mc_rtc::Configuration config_; ///< Stores the plugin configuration, in particular the planners' options
   std::string name_{"ExternalFootstepPlanner"}; ///< Name of the plugin (mainly used for logging)
@@ -83,6 +85,9 @@ protected:
   std::string plannerName_{"OnlineFootstepPlanner"}; ///< Name of the currently activated planner
   std::unique_ptr<ExternalFootstepPlanner> planner_{nullptr}; ///< Planner implementation
   bool wasAvailable_ = false; ///< True if the planner was active during the previous iteration
+
+  std::vector<std::string> supportedTargetTypes_{"World SE2", "Local SE2", "Local Velocity"};
+  std::string targetType_{"World SE2"};
 
   bool worldPositionTargetChanged_ =
       false; ///< True if the requested target has changed (either through the GUI or other means)
