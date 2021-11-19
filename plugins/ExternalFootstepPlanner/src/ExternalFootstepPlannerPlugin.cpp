@@ -111,6 +111,23 @@ void ExternalFootstepPlannerPlugin::changePlanner(const std::string & plannerNam
   mc_rtc::log::success("[{}] Changed planner to {}", name(), plannerName);
 }
 
+void ExternalFootstepPlannerPlugin::setWorldPositionTarget(const SE2d & worldTarget)
+{
+  worldPositionTarget_ = worldTarget;
+  worldPositionTargetChanged_ = true;
+}
+
+void ExternalFootstepPlannerPlugin::setLocalPositionTarget(const SE2d & localTarget)
+{
+  localPositionTarget_ = localTarget;
+  localPositionTargetChanged_ = true;
+}
+
+void ExternalFootstepPlannerPlugin::setLocalVelocityTarget(const SE2d & localVelocity)
+{
+  setLocalPositionTarget(localVelocity);
+}
+
 void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetType)
 {
   using namespace mc_rtc::gui;
@@ -126,10 +143,7 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
                              return {worldPositionTarget_.x, worldPositionTarget_.y, worldPositionTarget_.theta, 0.};
                            },
                            [this](const std::array<double, 4> & target) {
-                             worldPositionTarget_.x = target[0];
-                             worldPositionTarget_.y = target[1];
-                             worldPositionTarget_.theta = target[2];
-                             worldPositionTargetChanged_ = true;
+                             setWorldPositionTarget({target[0], target[1], target[2]});
                            }));
   }
   else if(targetType == "Local SE2")
@@ -140,15 +154,31 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
                                 return {localPositionTarget_.x, localPositionTarget_.y, localPositionTarget_.theta};
                               },
                               [this](const std::array<double, 3> & target) {
-                                localPositionTarget_.x = target[0];
-                                localPositionTarget_.y = target[1];
-                                localPositionTarget_.theta = target[2];
-                                localPositionTargetChanged_ = true;
+                                setLocalPositionTarget({target[0], target[1], target[2]});
                               }));
   }
   else if(targetType == "Local Velocity")
   {
     mc_rtc::log::warning("[{}] Local Veloctity target is not implemented yet.", name());
+    gui.addElement(category,
+                   NumberSlider("Local Velocity [x]", [this]() { return localVelocityTarget_.x; },
+                                [this](double vx) {
+                                  localVelocityTarget_.x = vx;
+                                  setLocalVelocityTarget(localVelocityTarget_);
+                                },
+                                -1, 1),
+                   NumberSlider("Local Velocity [y]", [this]() { return localVelocityTarget_.y; },
+                                [this](double vy) {
+                                  localVelocityTarget_.y = vy;
+                                  setLocalVelocityTarget(localVelocityTarget_);
+                                },
+                                -1, 1),
+                   NumberSlider("Local Velocity [theta]", [this]() { return localVelocityTarget_.theta; },
+                                [this](double vy) {
+                                  localVelocityTarget_.theta = vy;
+                                  setLocalVelocityTarget(localVelocityTarget_);
+                                },
+                                -1, 1));
   }
   else
   {

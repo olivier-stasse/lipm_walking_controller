@@ -53,8 +53,49 @@ struct ExternalFootstepPlannerPlugin : public mc_control::GlobalPlugin
   }
 
 protected:
+  /**
+   * @brief Change which footstep planner is used
+   *
+   * @param plannerName Name of the desired planner. Must be one of supportPlanners_.
+   */
   void changePlanner(const std::string & plannerName);
+
+  /**
+   * @brief Change type of target used (world, local, velocity, etc)
+   *
+   * @param targetType Desired target type. Must be one of supportedTargetTypes_.
+   */
   void changeTargetType(const std::string & targetType);
+
+  /**
+   * @brief Set the desired world target
+   *
+   * @param worldTarget Target in world frame (X;Y;Theta)
+   */
+  void setWorldPositionTarget(const SE2d & worldTarget);
+
+  /**
+   * @brief Set the desired local target
+   * @note the local frame is defined as the frame halfway in-between the support feet at the start of the plan.
+   * @param worldTarget Target in local frame (X;Y;Theta)
+   */
+
+  void setLocalPositionTarget(const SE2d & localTarget);
+
+  /**
+   * @brief Set the Local Velocity Target object
+   * @note For now this is implemented as requesting a local target as none of the supported planners support velocity
+   * inputs. Also the planner does not have suitable input parameters to match the footstep length to the desired
+   * velocity. As a result "velocity" here is interpreted in an arbitrary unity and should be seen as a desired
+   * direction.
+   *
+   * @note Historical background: this is a direct replacement for the deprecated input_convertor_node
+   *
+   * @param velocityTarget Desired velocity in local frame
+   * @see setLocalPositionTarget
+   */
+  void setLocalVelocityTarget(const SE2d & velocityTarget);
+
   /**
    * @brief Add GUI elements that are visible when the planner is available
    */
@@ -95,6 +136,8 @@ protected:
 
   bool localPositionTargetChanged_{false};
   SE2d localPositionTarget_{};
+
+  SE2d localVelocityTarget_{};
 };
 
 } // namespace ExternalFootstepPlanner
