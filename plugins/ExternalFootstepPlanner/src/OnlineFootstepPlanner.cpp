@@ -6,6 +6,7 @@
 #include <mc_plugin_footstep_plan_msgs/FootStepPlanRequest.h>
 #include <mc_plugin_footstep_plan_msgs/FootStepPlanRequestService.h>
 #include <ros/ros.h>
+#include <sensor_msgs/Joy.h>
 
 #include <ExternalFootstepPlanner/OnlineFootstepPlanner.h>
 #include <chrono>
@@ -62,11 +63,26 @@ void OnlineFootstepPlanner::rosThread()
   footstep_service.waitForExistence();
   mc_rtc::log::info("[{}] Service \"{}\" is now available", name(), footstep_service_topic_);
 
+  /* Tsuru add Jan.2022, for PS4 input */
+  ros::Subscriber ps4_sub = nh.subscribe<sensor_msgs::Joy>(joystick_topic_, 1, &OnlineFootstepPlanner::joystick_callback, this);
+
   auto futurePlan = std::future<boost::optional<Plan>>{};
 
   ros::Rate rate(rate_);
   while(ros::ok() && run_)
   {
+
+    /* * * * * * * * * * * * */
+    /* Receive Joystic Input */
+    /* * * * * * * * * * * * */
+
+    ros::spinOnce();  // for Joystick callback function
+
+
+    /* * * * * * * * * * * * */
+    /* Planning Request Part */
+    /* * * * * * * * * * * * */
+
     available_ = ros::service::exists(footstep_service_topic_, false);
     if(planRequested_)
     {
@@ -180,6 +196,13 @@ Plan OnlineFootstepPlanner::popPlan()
   std::lock_guard<std::mutex> lock{planMutex_};
   planReceived_ = false;
   return std::move(plan_); // plan_ is invalid after this
+}
+
+void OnlineFootstepPlanner::joystick_callback(const sensor_msgs::JoyConstPtr &joystick_input)
+{
+  ROS_WARN("joystick callback start");
+  ROS_WARN("%1.2f, %1.2f, %1.2f, %1.2f", joystick_input->axes.at(0), joystick_input->axes.at(1), joystick_input->axes.at(2), joystick_input->axes.at(3));
+  return;
 }
 
 } // namespace ExternalFootstepPlanner
