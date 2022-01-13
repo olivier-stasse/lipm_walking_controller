@@ -53,7 +53,7 @@ void OnlineFootstepPlanner::deactivate()
 
 void OnlineFootstepPlanner::rosThread()
 {
-  mc_rtc::log::info("[{}] ROS thread started", name());
+  mc_rtc::log::info("[{}] Planner thread started", name());
   auto & nh = *mc_rtc::ROSBridge::get_node_handle();
   // Service to request generation of a footstep plan
   // XXX: calling it should cancel the previous ongoing request (this is not the case in OnlineFootstepPlanner)
@@ -142,7 +142,7 @@ void OnlineFootstepPlanner::rosThread()
     }
     rate.sleep();
   }
-  mc_rtc::log::info("[{}] ROS thread stopped", name());
+  mc_rtc::log::info("[{}] Planner thread stopped", name());
 }
 
 void OnlineFootstepPlanner::requestPlan(const Request & request)

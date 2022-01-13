@@ -166,9 +166,9 @@ protected:
   SE2d planningDistance_{0.3, 0.3, mc_rtc::constants::PI / 2}; // How far ahead should we plan?
 
   /* Tsuru add */
-  std::thread joystickMonitorThread_;
+  std::thread joystickSubscribeThread_;
 protected:
-  void joystickMonitorThread();
+  void joystickSubscribeThread();
   void joystick_callback(const sensor_msgs::JoyConstPtr & joystick_input);
   std::string joystick_topic_ = "/avatar/joy";
   double rate_ = 30;

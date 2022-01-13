@@ -175,6 +175,14 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
   std::vector<std::string> category = category_;
   category.push_back("Target");
   gui.removeCategory(category);
+
+  /* if Joystick Thread has already started once before, stop it here. */
+  if(run_)
+  {
+    run_ = false;
+    joystickSubscribeThread_.join();
+  }
+
   if(targetType == "World SE2")
   {
     gui.addElement(category,
@@ -241,7 +249,7 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
     // setJoystickVelocityTarget(latest_joy_);  // Is a kind of initalization necessary?
     // activate a new ROS thread
     run_ = true;
-    joystickMonitorThread_ = std::thread(&ExternalFootstepPlannerPlugin::joystickMonitorThread, this);
+    joystickSubscribeThread_ = std::thread(&ExternalFootstepPlannerPlugin::joystickSubscribeThread, this);
   }
   else
   {
@@ -263,9 +271,6 @@ void ExternalFootstepPlannerPlugin::activate()
   gui.addElement(category_, Label("Available?", [this]() { return planner_->available(); }));
   planner_->activate();
 
-  // /* Tsuru add below to monitor Joystick Input through ROS topic. */
-  // joystickMonitorThread_ = std::thread(&ExternalFootstepPlanner::joystickMonitorThread, this);
-
   activated_ = true;
 }
 
@@ -279,9 +284,9 @@ void ExternalFootstepPlannerPlugin::deactivate()
   removePlannerGUI();
   planner_->deactivate();
 
-  /* Tsuru add below to monitor Joystick Input through ROS topic. */
+  /* Tsuru add below to Subscribe Joystick Input through ROS topic. */
   run_ = false;
-  joystickMonitorThread_.join();
+  joystickSubscribeThread_.join();
 
   activated_ = false;
   wasAvailable_ = false;
@@ -306,9 +311,9 @@ void ExternalFootstepPlannerPlugin::removePlannerGUI()
   gui.removeElement(category_, "Target type");
 }
 
-void ExternalFootstepPlannerPlugin::joystickMonitorThread()
+void ExternalFootstepPlannerPlugin::joystickSubscribeThread()
 {
-  mc_rtc::log::info("[{}] ROS thread started", name());
+  mc_rtc::log::info("[{}] Joystick subscribe thread started", name());
   auto & nh = *mc_rtc::ROSBridge::get_node_handle();
   // Service to request generation of a footstep plan
   // XXX: calling it should cancel the previous ongoing request (this is not the case in OnlineFootstepPlanner)
@@ -326,7 +331,7 @@ void ExternalFootstepPlannerPlugin::joystickMonitorThread()
     ros::spinOnce(); // for Joystick callback function
     rate.sleep();
   }
-  mc_rtc::log::info("[{}] ROS thread stopped", name());
+  mc_rtc::log::info("[{}] Joystick subscribe thread stopped", name());
 }
 
 void ExternalFootstepPlannerPlugin::joystick_callback(const sensor_msgs::JoyConstPtr & joystick_input)
