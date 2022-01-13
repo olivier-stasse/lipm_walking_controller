@@ -6,8 +6,6 @@
 #include <mutex>
 #include <thread>
 
-#include <sensor_msgs/Joy.h>
-
 namespace mc_plugin
 {
 namespace ExternalFootstepPlanner
@@ -49,9 +47,6 @@ struct OnlineFootstepPlanner : ExternalFootstepPlanner
 protected:
   void rosThread();
 
-  /* Tsuru add */
-  void joystick_callback(const sensor_msgs::JoyConstPtr &joystick_input);
-
 protected:
   bool activated_ = false; ///< Whether the plugin is active (GUI displayed, planner connected, etc)
   bool verbose_ = false; ///< Whether to print debug information
@@ -84,10 +79,6 @@ protected:
   std::future<boost::optional<Plan>> futurePlan_;
   std::string footstep_service_topic_ =
       "/online_footstep_planner/footstep_generation_srv"; ///< ROS service used to request a new plan
-
-  /* Tsuru add, for joystick input */
-  std::string joystick_topic_ = "/avatar/joy";  // ROS topic name to specify velocity
-
   /** @} */
 };
 

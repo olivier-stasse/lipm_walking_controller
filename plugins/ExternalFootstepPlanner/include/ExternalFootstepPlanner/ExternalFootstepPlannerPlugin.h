@@ -9,6 +9,7 @@
 #include <ExternalFootstepPlanner/ExternalFootstepPlanner.h>
 #include <ExternalFootstepPlanner/ExternalFootstepPlannerPlugin.h>
 #include <ExternalFootstepPlanner/SE2d.h>
+#include <sensor_msgs/Joy.h>
 
 namespace mc_plugin
 {
@@ -107,6 +108,20 @@ protected:
   void setLocalVelocityPlanningDistance(const SE2d & distance);
 
   /**
+   * @brief [Tsuru add] Sets the Local Velocity Target object by ROS Joystick input
+   * @note For now this is implemented as requesting a local target as none of the supported planners support velocity
+   * inputs. Also the planner does not have suitable input parameters to match the footstep length to the desired
+   * velocity. As a result "velocity" here is interpreted in an arbitrary unity and should be seen as a desired
+   * direction.
+   *
+   * @note Historical background: this is a direct replacement for the deprecated input_convertor_node
+   *
+   * @param joystickInput ROS message for biped walking in local frame
+   * @see setLocalPositionTarget
+   */
+  void setJoystickVelocityTarget(const sensor_msgs::Joy & joystickInput);
+
+  /**
    * @brief Add GUI elements that are visible when the planner is available
    */
   void addPlannerGUI();
@@ -137,7 +152,7 @@ protected:
   std::unique_ptr<ExternalFootstepPlanner> planner_{nullptr}; ///< Planner implementation
   bool wasAvailable_ = false; ///< True if the planner was active during the previous iteration
 
-  std::vector<std::string> supportedTargetTypes_{"World SE2", "Local SE2", "Local Velocity"};
+  std::vector<std::string> supportedTargetTypes_{"World SE2", "Local SE2", "Local Velocity", "PS4 Controller"};
   std::string targetType_{"World SE2"};
 
   bool worldPositionTargetChanged_ =
@@ -149,6 +164,17 @@ protected:
 
   SE2d localVelocityTarget_{};
   SE2d planningDistance_{0.3, 0.3, mc_rtc::constants::PI / 2}; // How far ahead should we plan?
+
+  /* Tsuru add */
+  std::thread joystickMonitorThread_;
+protected:
+  void joystickMonitorThread();
+  void joystick_callback(const sensor_msgs::JoyConstPtr & joystick_input);
+  std::string joystick_topic_ = "/avatar/joy";
+  double rate_ = 30;
+  bool run_{false};
+  bool joystickPositionTargetChanged_{false};
+  bool isControllerConnected_{false};
 };
 
 } // namespace ExternalFootstepPlanner

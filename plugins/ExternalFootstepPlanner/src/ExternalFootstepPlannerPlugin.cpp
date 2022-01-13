@@ -39,7 +39,7 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this]() { deactivate(); });
   // Do we need replanning?
   ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested",
-                            [this]() { return worldPositionTargetChanged_ || localPositionTargetChanged_; });
+                            [this]() { return worldPositionTargetChanged_ || localPositionTargetChanged_; }); // joystick input uses "localPositionTargetChanged_"
   ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTargetChanged",
                             [this]() { return worldPositionTargetChanged_; });
   ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTarget",
@@ -57,6 +57,10 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
                             [this](const SE2d & localTarget) { setLocalPositionTarget(localTarget); });
   ctl.datastore().make_call("ExternalFootstepPlanner::SetLocalVelocityTarget",
                             [this](const SE2d & localVelocity) { setLocalVelocityTarget(localVelocity); });
+  /* Tsuru add */
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetJoystickVelocityTarget",
+                            [this](const sensor_msgs::Joy & joystickInput) { setJoystickVelocityTarget(joystickInput); });
+
   // Call this to request a new plan
   ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan", [this](const Request & request) {
     worldPositionTargetChanged_ = false;
@@ -149,6 +153,19 @@ void ExternalFootstepPlannerPlugin::setLocalVelocityPlanningDistance(const SE2d 
   setLocalVelocityTarget(localVelocityTarget_);
 }
 
+/* Tsuru add */
+void ExternalFootstepPlannerPlugin::setJoystickVelocityTarget(const sensor_msgs::Joy & joystickInput)
+{
+  ROS_WARN("setJoystickVelocityTarget start");
+  SE2d localVelocity;
+  
+  /* convert sensor_msgs::Joy -> SE2d */
+  /* process */
+
+  setLocalVelocityTarget(localVelocity);
+  return;
+}
+
 void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetType)
 {
   if(!planner_) return;
@@ -218,6 +235,14 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
                                           makeSliders();
                                         }));
   }
+  else if(targetType == "PS4 Controller")
+  {
+    gui.addElement(category, Label("is Controller Connected?", [this]() { return isControllerConnected_; }));
+    // setJoystickVelocityTarget(latest_joy_);  // Is a kind of initalization necessary?
+    // activate a new ROS thread
+    run_ = true;
+    joystickMonitorThread_ = std::thread(&ExternalFootstepPlannerPlugin::joystickMonitorThread, this);
+  }
   else
   {
     mc_rtc::log::error_and_throw<std::invalid_argument>("[{}] Target type {} is not supported (supported: {})", name(),
@@ -237,6 +262,10 @@ void ExternalFootstepPlannerPlugin::activate()
                                        [this](const std::string & planner) { changePlanner(planner); }));
   gui.addElement(category_, Label("Available?", [this]() { return planner_->available(); }));
   planner_->activate();
+
+  // /* Tsuru add below to monitor Joystick Input through ROS topic. */
+  // joystickMonitorThread_ = std::thread(&ExternalFootstepPlanner::joystickMonitorThread, this);
+
   activated_ = true;
 }
 
@@ -249,6 +278,11 @@ void ExternalFootstepPlannerPlugin::deactivate()
   gui.removeElement(category_, "Available?");
   removePlannerGUI();
   planner_->deactivate();
+
+  /* Tsuru add below to monitor Joystick Input through ROS topic. */
+  run_ = false;
+  joystickMonitorThread_.join();
+
   activated_ = false;
   wasAvailable_ = false;
 }
@@ -270,6 +304,39 @@ void ExternalFootstepPlannerPlugin::removePlannerGUI()
   category.push_back("Target");
   gui.removeCategory(category);
   gui.removeElement(category_, "Target type");
+}
+
+void ExternalFootstepPlannerPlugin::joystickMonitorThread()
+{
+  mc_rtc::log::info("[{}] ROS thread started", name());
+  auto & nh = *mc_rtc::ROSBridge::get_node_handle();
+  // Service to request generation of a footstep plan
+  // XXX: calling it should cancel the previous ongoing request (this is not the case in OnlineFootstepPlanner)
+  
+  ros::Subscriber ps4_sub =
+      nh.subscribe<sensor_msgs::Joy>(joystick_topic_, 1, &ExternalFootstepPlannerPlugin::joystick_callback, this);
+
+  ros::Rate rate(rate_);
+  while(ros::ok() && run_)
+  {
+    /* * * * * * * * * * * * */
+    /* Receive Joystic Input */
+    /* * * * * * * * * * * * */
+    // if(controller is available)
+    ros::spinOnce(); // for Joystick callback function
+    rate.sleep();
+  }
+  mc_rtc::log::info("[{}] ROS thread stopped", name());
+}
+
+void ExternalFootstepPlannerPlugin::joystick_callback(const sensor_msgs::JoyConstPtr & joystick_input)
+{
+  ROS_WARN("joystick callback start");
+  ROS_WARN("%1.2f, %1.2f, %1.2f, %1.2f", joystick_input->axes.at(0), joystick_input->axes.at(1),
+           joystick_input->axes.at(2), joystick_input->axes.at(3));
+  /* update the LocalTarget with the latest Joy message */
+  setJoystickVelocityTarget(*joystick_input);
+  return;
 }
 
 } // namespace ExternalFootstepPlanner
