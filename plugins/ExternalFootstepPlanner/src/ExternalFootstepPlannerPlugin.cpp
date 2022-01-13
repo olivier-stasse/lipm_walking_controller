@@ -156,11 +156,12 @@ void ExternalFootstepPlannerPlugin::setLocalVelocityPlanningDistance(const SE2d 
 /* Tsuru add */
 void ExternalFootstepPlannerPlugin::setJoystickVelocityTarget(const sensor_msgs::Joy & joystickInput)
 {
-  ROS_WARN("setJoystickVelocityTarget start");
   SE2d localVelocity;
   
   /* convert sensor_msgs::Joy -> SE2d */
-  /* process */
+  localVelocity.x = joystickInput.axes.at(1) * 0.2;
+  localVelocity.y = joystickInput.axes.at(0) * 0.2; // Arnaud sets 0.15, but I like 0.20.
+  localVelocity.theta = atan2(localVelocity.y, localVelocity.x);  //WIP
 
   setLocalVelocityTarget(localVelocity);
   return;
@@ -246,7 +247,6 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
   else if(targetType == "PS4 Controller")
   {
     gui.addElement(category, Label("is Controller Connected?", [this]() { return isControllerConnected_; }));
-    // setJoystickVelocityTarget(latest_joy_);  // Is a kind of initalization necessary?
     // activate a new ROS thread
     run_ = true;
     joystickSubscribeThread_ = std::thread(&ExternalFootstepPlannerPlugin::joystickSubscribeThread, this);
@@ -336,9 +336,9 @@ void ExternalFootstepPlannerPlugin::joystickSubscribeThread()
 
 void ExternalFootstepPlannerPlugin::joystick_callback(const sensor_msgs::JoyConstPtr & joystick_input)
 {
-  ROS_WARN("joystick callback start");
-  ROS_WARN("%1.2f, %1.2f, %1.2f, %1.2f", joystick_input->axes.at(0), joystick_input->axes.at(1),
-           joystick_input->axes.at(2), joystick_input->axes.at(3));
+  // ROS_WARN("joystick callback start");
+  // ROS_WARN("%1.2f, %1.2f, %1.2f, %1.2f", joystick_input->axes.at(0), joystick_input->axes.at(1),
+  //          joystick_input->axes.at(2), joystick_input->axes.at(3));
   /* update the LocalTarget with the latest Joy message */
   setJoystickVelocityTarget(*joystick_input);
   return;
