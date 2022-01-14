@@ -165,10 +165,6 @@ void ExternalFootstepPlannerPlugin::setJoystickVelocityTarget(const sensor_msgs:
   else if(targetType_ == "Oculus Controller")
     localVelocity = InputConvertor::convert_Oculus_to_SE2d(joystickInput);
 
-  // localVelocity.x = joystickInput.axes.at(1) * 0.2;
-  // localVelocity.y = joystickInput.axes.at(0) * 0.2; // Arnaud sets 0.15, but I like 0.20.
-  // localVelocity.theta = atan2(localVelocity.y, localVelocity.x);  //WIP
-
   setLocalVelocityTarget(localVelocity);
   return;
 }
