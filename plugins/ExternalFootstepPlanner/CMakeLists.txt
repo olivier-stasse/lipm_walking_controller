@@ -32,12 +32,14 @@ set(ExternalFootstepPlanner_SRC
   src/ExternalFootstepPlannerPlugin.cpp
   src/ExternalFootstepPlanner.cpp
   src/OnlineFootstepPlanner.cpp
+  src/InputConvertor.cpp
 )
 
 set(ExternalFootstepPlanner_HDR
   include/ExternalFootstepPlanner/ExternalFootstepPlannerPlugin.h
   include/ExternalFootstepPlanner/ExternalFootstepPlanner.h
   include/ExternalFootstepPlanner/OnlineFootstepPlanner.h
+  include/ExternalFootstepPlanner/InputConvertor.h
 )
 
 

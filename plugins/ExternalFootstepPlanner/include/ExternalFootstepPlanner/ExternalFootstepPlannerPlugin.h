@@ -10,6 +10,7 @@
 #include <ExternalFootstepPlanner/ExternalFootstepPlannerPlugin.h>
 #include <ExternalFootstepPlanner/SE2d.h>
 #include <sensor_msgs/Joy.h>
+#include <ExternalFootstepPlanner/InputConvertor.h>
 
 namespace mc_plugin
 {
@@ -152,7 +153,7 @@ protected:
   std::unique_ptr<ExternalFootstepPlanner> planner_{nullptr}; ///< Planner implementation
   bool wasAvailable_ = false; ///< True if the planner was active during the previous iteration
 
-  std::vector<std::string> supportedTargetTypes_{"World SE2", "Local SE2", "Local Velocity", "PS4 Controller"};
+  std::vector<std::string> supportedTargetTypes_{"World SE2", "Local SE2", "Local Velocity", "PS4 Controller", "Oculus Controller"};
   std::string targetType_{"World SE2"};
 
   bool worldPositionTargetChanged_ =

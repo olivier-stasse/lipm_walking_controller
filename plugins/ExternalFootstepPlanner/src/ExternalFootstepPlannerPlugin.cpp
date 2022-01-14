@@ -157,11 +157,17 @@ void ExternalFootstepPlannerPlugin::setLocalVelocityPlanningDistance(const SE2d 
 void ExternalFootstepPlannerPlugin::setJoystickVelocityTarget(const sensor_msgs::Joy & joystickInput)
 {
   SE2d localVelocity;
-  
+
   /* convert sensor_msgs::Joy -> SE2d */
-  localVelocity.x = joystickInput.axes.at(1) * 0.2;
-  localVelocity.y = joystickInput.axes.at(0) * 0.2; // Arnaud sets 0.15, but I like 0.20.
-  localVelocity.theta = atan2(localVelocity.y, localVelocity.x);  //WIP
+  if(targetType_ == "PS4 Controller")
+    localVelocity = InputConvertor::convert_PS4_to_SE2d(joystickInput);
+
+  else if(targetType_ == "Oculus Controller")
+    localVelocity = InputConvertor::convert_Oculus_to_SE2d(joystickInput);
+
+  // localVelocity.x = joystickInput.axes.at(1) * 0.2;
+  // localVelocity.y = joystickInput.axes.at(0) * 0.2; // Arnaud sets 0.15, but I like 0.20.
+  // localVelocity.theta = atan2(localVelocity.y, localVelocity.x);  //WIP
 
   setLocalVelocityTarget(localVelocity);
   return;
@@ -244,7 +250,7 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
                                           makeSliders();
                                         }));
   }
-  else if(targetType == "PS4 Controller")
+  else if(targetType == "PS4 Controller" || targetType == "Oculus Controller")
   {
     gui.addElement(category, Label("is Controller Connected?", [this]() { return isControllerConnected_; }));
     // activate a new ROS thread
