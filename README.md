@@ -50,7 +50,7 @@ ___
 ``$ mkdir build``
 
 
-#### 3. go into the build directory and run ccmake. 
+#### 3. go into the build directory and run ccmake :
 
 ``$ ccmake ..``
 
@@ -59,7 +59,7 @@ Turn on **AUTOLOAD_ExternalFootstepPlannerPlugin** option.
 And also, don't forget to set **CMake Install prefix** to /home/*your_name*/openrtp.
 
 
-#### 4. build this controller, and install it.
+#### 4. build this controller, and install it :
 
 ``$ make -j8``
 
@@ -81,7 +81,7 @@ Enabled: LIPMWalking
 ```
 
 
-### You need at least these 4 terminals.
+### You need at least these 4 terminal windows.
 
 * ROS core
 * Choreonoid simulation
@@ -113,7 +113,11 @@ and please click the starting button in Choreonoid.
 Now, the LIPM walking controller is running.
 The HRP4CR robot model will keep standing.
 
-_(if the robot fails to the ground, your hrpsys-humanoid is too old. please update all libraries with drcutl script.)_
+
+
+_(if the robot fails on the ground, `$ clear-omninames.sh` sometimes solve it.)_
+
+_(Even clear-omninames.sh cannot help you, your hrpsys-humanoid is too old. please update all libraries with drcutl script.)_
 
 
 ![standing HRP4CR](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-28-38.png)
