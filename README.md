@@ -7,6 +7,8 @@
 [![demo video](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2019-17-45.png)](https://youtu.be/XoXDZBgbamc)
 
 
+Video link is [here](https://youtu.be/XoXDZBgbamc)
+
 This version of LIPM walking controller is mainly developed by [Arnaud Tanguy](https://github.com/arntanguy).
 
 He fixed the "double stepping" problem, communication delay between several PCs for the experiment, and so on.
