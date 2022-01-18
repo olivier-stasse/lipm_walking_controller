@@ -52,9 +52,9 @@ ___
 
 ``$ ccmake ..``
 
-**Turn on AUTOLOAD_ExternalFootstepPlannerPlugin option.**
+Turn on **AUTOLOAD_ExternalFootstepPlannerPlugin** option.
 
-**And don't forget to set CMake Install prefix to /home/*your_name*/openrtp **
+And also, don't forget to set **CMake Install prefix** to /home/*your_name*/openrtp.
 
 
 #### 4. build this controller, and install it.
