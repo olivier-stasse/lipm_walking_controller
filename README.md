@@ -137,7 +137,7 @@ _(Even clear-omninames.sh cannot help you, your hrpsys-humanoid is too old. plea
 
 Joystick connection node and Online Footstep Planner node start.
 
-If you can see the yellow warning message like below picture, it's success!!
+If you can see the yellow warning message "received a map" like below-right side of the picture, it's success!!
 
 
 ![terimal_message](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-29-11.png)
