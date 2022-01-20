@@ -1,11 +1,13 @@
-# Re-organized LIPM Walking Controller　for ANA avatar controller
+# Re-organized LIPM Walking Controller for Joystick Walking
 
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-green.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![CI](https://github.com/jrl-umi3218/lipm_walking_controller/workflows/CI/badge.svg?branch=topic/ci)](https://github.com/jrl-umi3218/lipm_walking_controller/actions?query=workflow%3A%22CI%22)
 [![Documentation](https://img.shields.io/badge/doxygen-online-brightgreen?logo=read-the-docs&style=flat)](http://jrl-umi3218.github.io/lipm_walking_controller/doxygen/HEAD/index.html)
 
-[![Stair climbing by the HRP-4 humanoid robot](https://github.com/TsuruMasato/lipm_walking_controller/titleimage.jpg)](https://youtu.be/XoXDZBgbamc)
+[![demo video](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2019-17-45.png)](https://youtu.be/XoXDZBgbamc)
 
+
+Video link is [here](https://youtu.be/XoXDZBgbamc)
 
 This version of LIPM walking controller is mainly developed by [Arnaud Tanguy](https://github.com/arntanguy).
 
@@ -29,33 +31,35 @@ Required components and libraries :
 * Online Footstep Planner, the latest version (2021/1/18) https://github.com/isri-aist/OnlineFootstepPlanner
 * PS4 controller and USB cable
 
-_Basically, drcutl environment setup script and mc_rtc installation script automatically sets up most of those libraries. _
+__Basically, drcutl's environment setup script and mc_rtc installation script automatically set up most of those libraries.__
 
-_Only "OnlineFootstepPlanner" is not automatically installed by those scripts. _
+__Only "OnlineFootstepPlanner" is not automatically installed by those scripts.__
+
+About the installation of OnlineFootstepPlanner, please visit [its page](https://github.com/isri-aist/OnlineFootstepPlanner)
 
 ___
 ## How to build
 
-1. download this repository: 
+#### 1. download this repository: 
 
 ``$ git clone git@github.com:TsuruMasato/lipm_walking_controller.git `` (default branch "rebase_stabilizer_ana")
 
 
-2. go into the repository and make "build" directory: 
+#### 2. go into the repository and make "build" directory: 
 
 ``$ mkdir build``
 
 
-3. go into the build directory and run ccmake. 
+#### 3. go into the build directory and run ccmake :
 
 ``$ ccmake ..``
 
-**Turn on AUTOLOAD_ExternalFootstepPlannerPlugin option.**
+Turn on **AUTOLOAD_ExternalFootstepPlannerPlugin** option.
 
-**And don't forget to set CMake Install prefix to /home/*your_name*/openrtp **
+And also, don't forget to set **CMake Install prefix** to /home/*your_name*/openrtp.
 
 
-4. build this controller, and install it.
+#### 4. build this controller, and install it :
 
 ``$ make -j8``
 
@@ -77,24 +81,30 @@ Enabled: LIPMWalking
 ```
 
 
-#### You need at least these 4 terminals.
+### You need at least these 4 terminal windows.
 
 * ROS core
 * Choreonoid simulation
 * RViz as mc_rtc control interface
 * Online Footstep Planner
 
-0. start ROS core in 1th terminal :
+
+***
+
+### process
+
+
+#### 1. start ROS core in 1th terminal :
 
 ``$ roscore ``
 
 
-1. Please go to the HRP4CR directory in openrtp system in 2nd terminal :
+#### 2. Please go to the HRP4CR directory in openrtp system in 2nd terminal :
 
 ``$ cd ~/openrtp/share/hrpsys/samples/HRP4CR``
 
 
-2. Start Choreonoid simulation in 2nd terminal :
+#### 3. Start Choreonoid simulation in 2nd terminal :
 
 ``$ choreonoid sim_mc_openrtp_bush.cnoid ``
 
@@ -104,22 +114,36 @@ Now, the LIPM walking controller is running.
 The HRP4CR robot model will keep standing.
 
 
-![standing HRP4CR](choreonoid_img.jpg)
 
-3. Start RViz in 3rd terminal :
+_(if the robot fails on the ground, `$ clear-omninames.sh` sometimes solve it.)_
+
+_(Even clear-omninames.sh cannot help you, your hrpsys-humanoid is too old. please update all libraries with drcutl script.)_
+
+
+![standing HRP4CR](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-28-38.png)
+
+
+
+#### 4. Start RViz in 3rd terminal :
 
 `` $ roslaunch mc_rtc_ticker display.launch ``
 
-![RViz panel](rviz_img.jpg)
+![RViz panel](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-28-46.png)
 
 
-4. Plug your PS4 controller to a USB port, and start Online Footstep Planner in 4th terminal :
+#### 5. Plug your PS4 controller to a USB port, and start Online Footstep Planner in 4th terminal :
 
 `` $ roslaunch online_footstep_planner run_demo_in_sim_rebase.launch ``
 
+Joystick connection node and Online Footstep Planner node start.
 
-![terimal_message](terminal_img.jpg)
+If you can see the yellow warning message "received a map" like below-right side of the picture, it's success!!
 
+
+![terimal_message](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-29-11.png)
+
+
+___
 
 ___
 
@@ -127,21 +151,27 @@ ___
 
 After starting the whole system, you have to select some GUI options.
 
-1. Go to "Walking" tab in the control panel in RViz
+#### 1. Go to "Walking" tab in the control panel in RViz
 
 
-![terimal_message](walking_tab_img.jpg)
+![Walking tab in RViz](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-40-29.png)
 
 
-2. Click "start standing"
+#### 2. Click "start standing" button.
 
-3. Set Footstep plan menu to "external"
-
-4. Change Target type to "PS4 Controller"
-
-5. Now you can walk the robot via Joysticks!!
+_The stabilizer task becomes enable, and HRP4CR starts balancing._
 
 
-Left Joystick leads the robot walking foward/backward/left/right, and Right Joystick makes him turn.
+#### 3. Set Footstep plan menu to "external"
+
+#### 4. Change Target type to "PS4 Controller"
+
+![Final state of RViz panel](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-41-16.png)
+
+
+#### 5. Now you can walk the robot via Joysticks!!
+
+
+##### Left Joystick leads the robot walking foward/backward/left/right, and Right Joystick makes him turn.
 
 
