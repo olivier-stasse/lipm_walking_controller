@@ -34,6 +34,13 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   auto plannerName = config("planner", std::string{"OnlineFootstepPlanner"});
   changePlanner(plannerName);
 
+  /* Tsuru add */
+  if(config.has("default_target_type"))
+  {
+    targetType_ = (std::string) config("default_target_type");
+    mc_rtc::log::success("[{}] set target_type: {}", name(), targetType_);
+  }
+
   ctl.datastore().make_call("ExternalFootstepPlanner::Available", [this]() { return planner_->available(); });
   ctl.datastore().make_call("ExternalFootstepPlanner::Activate", [this]() { activate(); });
   ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this]() { deactivate(); });

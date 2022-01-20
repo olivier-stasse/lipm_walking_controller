@@ -1,4 +1,7 @@
 category: ["Walking", "Main", "External Planning"]
+
+default_target_type: "PS4 Controller"
+
 velocity_target:
   planning_distance: [0.15, 0.15, 1.57]
 
