@@ -15,8 +15,6 @@ SE2d InputConvertor::convert_PS4_to_SE2d(const sensor_msgs::Joy & joy_msg)
   double radius_max = 0.15;
   double radius;
 
-  
-
   float val_forward = axis_forward_sgn * joy_msg.axes.at(1);
   float val_lateral = axis_lateral_sgn * joy_msg.axes.at(0);
   float val_theta = joy_msg.axes.at(3);
@@ -94,7 +92,8 @@ SE2d InputConvertor::convert_Oculus_to_SE2d(const sensor_msgs::Joy & joy_msg)
   result.y = radius * sin(origin_theta);
   result.theta = val_theta;
 
-  ROS_WARN("[ExFootPlanPlugin::convert_Oculus_to_SE2d] foward: %f, lateral: %f, yaw: %f", result.x, result.y, result.theta);
+  ROS_WARN("[ExFootPlanPlugin::convert_Oculus_to_SE2d] foward: %f, lateral: %f, yaw: %f", result.x, result.y,
+           result.theta);
 
   return result;
 }
