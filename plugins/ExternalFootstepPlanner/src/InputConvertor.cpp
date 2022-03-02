@@ -52,7 +52,7 @@ SE2d InputConvertor::convert_PS4_to_SE2d(const sensor_msgs::Joy & joy_msg)
 
 SE2d InputConvertor::convert_Oculus_to_SE2d(const sensor_msgs::Joy & joy_msg)
 {
-  ROS_WARN("[ExFootPlanPlugin::InputConvertor] Convert_Oculus_to_SE2d function is not tested yet!! Watch out!!");
+  /// Convert_Oculus_to_SE2d function not fully tested (remove this comment if this has changed !)
   int axis_forward_sgn = 1;
   int axis_lateral_sgn = -1;
   int axis_theta_sgn = -1;
