@@ -26,6 +26,7 @@
  */
 
 #include <mc_rbdyn/rpy_utils.h>
+#include <mc_rtc/gui.h>
 
 #include <lipm_walking/FootstepPlan.h>
 
@@ -202,6 +203,76 @@ void FootstepPlan::updateInitialTransform(const sva::PTransformd & X_0_lf,
     contacts_[i].pose = contacts_[i].pose * X_0_rise;
   }
   X_0_init_ = X_delta * X_0_rise;
+}
+
+void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
+{
+  using namespace mc_rtc::gui;
+
+  gui.addElement({"Walking"},
+                 mc_rtc::gui::NumberInput("Torso Pitch [deg]",
+                                          [this]()
+                                          {
+                                            return mc_rtc::constants::toDeg(torsoPitch_);
+                                          },
+                                          [this](double p)
+                                          {
+                                            torsoPitch(mc_rtc::constants::toRad(p));
+                                          }));
+
+  auto footStepPolygon = [](const Contact & contact) {
+    std::vector<Eigen::Vector3d> polygon;
+    polygon.push_back(contact.vertex0());
+    polygon.push_back(contact.vertex1());
+    polygon.push_back(contact.vertex2());
+    polygon.push_back(contact.vertex3());
+    return polygon;
+  };
+
+  auto contactsPolygons = [this, footStepPolygon](const std::string & surfaceName) {
+    std::vector<std::vector<Eigen::Vector3d>> polygons;
+    const auto & contacts = contacts_;
+    for(unsigned i = 0; i < contacts.size(); i++)
+    {
+      auto & contact = contacts[i];
+      if(contact.surfaceName == surfaceName)
+      {
+        double supportDist = (contact.p() - supportContact().p()).norm();
+        double targetDist = (contact.p() - targetContact().p()).norm();
+        constexpr double SAME_CONTACT_DIST = 0.005;
+        // only display contact if it is not the support or target contact
+        if(supportDist > SAME_CONTACT_DIST && targetDist > SAME_CONTACT_DIST)
+        {
+          polygons.push_back(footStepPolygon(contact));
+        }
+      }
+    }
+    return polygons;
+  };
+
+  LineConfig leftPolygonConf;
+  leftPolygonConf.color = Color::Blue;
+  leftPolygonConf.width = 0.01;
+  leftPolygonConf.style = LineStyle::Dotted;
+  LineConfig rightPolygonConf = leftPolygonConf;
+  rightPolygonConf.color = Color::Red;
+  LineConfig targetContactPolygonConf = leftPolygonConf;
+  targetContactPolygonConf.color = Color::Green;
+  targetContactPolygonConf.width = 0.01;
+  targetContactPolygonConf.style = LineStyle::Solid;
+
+  gui.addElement({"Markers", "Footsteps", "Plan"},
+                 Polygon("TargetContact", targetContactPolygonConf,
+                         [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
+                 Polygon("FootstepPlan Left", leftPolygonConf,
+                         [this, contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
+                 Polygon("FootstepPlan Right", rightPolygonConf,
+                         [this, contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
+}
+
+void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
+{
+  gui.removeCategory({"Markers", "Footsteps", "Plan"});
 }
 
 } // namespace lipm_walking

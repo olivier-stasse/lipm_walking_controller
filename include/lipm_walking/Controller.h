@@ -30,18 +30,18 @@
 #include <mc_control/api.h>
 #include <mc_control/fsm/Controller.h>
 #include <mc_control/mc_controller.h>
+#include <mc_planning/Pendulum.h>
 #include <mc_rtc/logging.h>
+#include <mc_tasks/SurfaceTransformTask.h>
+#include <mc_tasks/lipm_stabilizer/StabilizerTask.h>
 
 #include <lipm_walking/Contact.h>
-#include <lipm_walking/FloatingBaseObserver.h>
+#include <lipm_walking/ExternalPlanner.h>
 #include <lipm_walking/FootstepPlan.h>
 #include <lipm_walking/ModelPredictiveControl.h>
-#include <lipm_walking/NetWrenchObserver.h>
-#include <lipm_walking/Pendulum.h>
 #include <lipm_walking/PlanInterpolator.h>
 #include <lipm_walking/Sole.h>
-#include <lipm_walking/Stabilizer.h>
-#include <lipm_walking/utils/LowPassVelocityFilter.h>
+#include <lipm_walking/WalkingState.h>
 
 /** Main controller namespace.
  *
@@ -100,15 +100,6 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
    */
   void addLogEntries(mc_rtc::Logger & logger);
 
-  /** Reset robot to its initial (half-sitting) configuration.
-   *
-   * The reason why I do it inside the controller rather than via the current
-   * mc_rtc way (switching to half_sitting controller then back to this one)
-   * is <https://gite.lirmm.fr/multi-contact/mc_rtc/issues/54>.
-   *
-   */
-  void internalReset();
-
   /** Set fraction of total weight that should be sustained by the left foot.
    *
    * \param ratio Number between 0 and 1.
@@ -122,6 +113,8 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
    *
    */
   void loadFootstepPlan(std::string name);
+
+  void updatePlan(const std::string & name);
 
   /** Callback function called by "Pause walking" button.
    *
@@ -151,11 +144,6 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
    *
    */
   bool updatePreview();
-
-  /** Update measured robot's floating base from kinematic observer.
-   *
-   */
-  void updateRealFromKinematics();
 
   /** Log a warning message when robot is in the air.
    *
@@ -253,7 +241,7 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
   /** This getter is only used for consistency with the rest of mc_rtc.
    *
    */
-  Pendulum & pendulum()
+  mc_planning::Pendulum & pendulum()
   {
     return pendulum_;
   }
@@ -285,10 +273,14 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
   /** This getter is only used for consistency with the rest of mc_rtc.
    *
    */
-  Stabilizer & stabilizer()
+  std::shared_ptr<mc_tasks::lipm_stabilizer::StabilizerTask> stabilizer()
   {
     return stabilizer_;
   }
+
+  /* Set contacts to the stabilizer and QP */
+  void setContacts(const std::vector<std::pair<mc_tasks::lipm_stabilizer::ContactState, sva::PTransformd>> & contacts,
+                   bool fullDoF = false);
 
   /** Get current support contact.
    *
@@ -307,42 +299,40 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
   }
 
 public: /* visible to FSM states */
+  WalkingState walkingState = WalkingState::Standby; /**< Current state */
   FootstepPlan plan; /**< Current footstep plan */
-  PlanInterpolator planInterpolator; /**< Footstep plan interpolator */
+  PlanInterpolator planInterpolator; /**< Footstep plan interpolator. Used to generate a simple FootstepPlan when we are
+                                        not using an external planner */
+  ExternalPlanner externalFootstepPlanner; ///< Handle requesting/receiving plans from an external planner
   bool emergencyStop = false; /**< Emergency flag: if on, the controller stops doing anything */
+  bool startWalking = false; /**< Is the walk started */
   bool pauseWalking = false; /**< Is the pause-walking behavior engaged? */
   bool pauseWalkingRequested = false; /**< Has user clicked on the "Pause walking" button? */
   std::shared_ptr<Preview> preview; /**< Current solution trajectory from the walking pattern generator */
-  std::shared_ptr<mc_tasks::OrientationTask> pelvisTask; /**< Pelvis orientation task */
-  std::shared_ptr<mc_tasks::OrientationTask> torsoTask; /**< Torso orientation task */
   std::vector<std::vector<double>>
       halfSitPose; /**< Half-sit joint-angle configuration stored when the controller starts. */
 
+  std::shared_ptr<mc_tasks::SurfaceTransformTask> swingFootTaskLeft_;
+  std::shared_ptr<mc_tasks::SurfaceTransformTask> swingFootTaskRight_;
+  bool isWalking = false;
+  unsigned nbMPCFailures_ = 0; /**< Number of times the walking pattern generator failed */
+
 private: /* hidden from FSM states */
-  Eigen::Matrix3d pelvisOrientation_ = Eigen::Matrix3d::Identity(); /**< Pelvis orientation (upright by default) */
-  Eigen::Vector3d realCom_ = Eigen::Vector3d::Zero(); /**< Estimated CoM position of the robot */
-  Eigen::Vector3d realComd_ = Eigen::Vector3d::Zero(); /**< Estimated CoM velocity of the robot */
-  FloatingBaseObserver floatingBaseObs_; /**< Floating base observer */
-  LowPassVelocityFilter<Eigen::Vector3d> comVelFilter_; /**< Low-pass filter used to estimate the CoM velocity */
+  std::shared_ptr<mc_tasks::lipm_stabilizer::StabilizerTask> stabilizer_;
+  mc_rbdyn::lipm_stabilizer::StabilizerConfiguration
+      defaultStabilizerConfig_; /**< Default configuration of the stabilizer */
   ModelPredictiveControl mpc_; /**< MPC problem solver used for walking pattern generation */
-  NetWrenchObserver netWrenchObs_; /**< Observe the net contact wrench exerted on the robot */
-  Pendulum pendulum_; /**< Holds the reference state (CoM position, velocity, ZMP, ...) from the walking pattern */
+  mc_rtc::Configuration mpcConfig_; /**< Configuration dictionary for the walking pattern generator */
+  mc_planning::Pendulum
+      pendulum_; /**< Holds the reference state (CoM position, velocity, ZMP, ...) from the walking pattern */
   Sole sole_; /**< Sole dimensions of the robot model */
-  Stabilizer stabilizer_; /**< Balance feedback control component that updates task targets */
-  bool leftFootRatioJumped_ = false; /**< Flag used to avoid discontinuous CoM velocity updates */
   double ctlTime_ = 0.; /**< Controller time */
-  double defaultTorsoPitch_ = 0.; /**< Default torso pitch angle, in [rad] */
   double doubleSupportDurationOverride_ = -1.; // [s]
   double leftFootRatio_ = 0.5; /**< Weight distribution ratio (0: all weight on right foot, 1: all on left foot) */
-  double maxCoMHeight_ = 2.; /**< Maximum height for the center of mass (updated from configuration) */
-  double maxTorsoPitch_ = -0.2; /**< Joint angle upper bound for torso pitch joint, in [rad] */
-  double minCoMHeight_ = 0.; /**< Minimum height for the center of mass (updated from configuration) */
-  double minTorsoPitch_ = -0.2; /**< Joint angle lower bound for torso pitch joint, in [rad] */
-  double torsoPitch_; /**< Torso pitch angle with respect to the pelvis body, in [rad] */
-  mc_rtc::Configuration mpcConfig_; /**< Configuration dictionary for the walking pattern generator */
   std::string segmentName_ = ""; /**< Name of current log segment (this is an mc_rtc specific) */
   unsigned nbLogSegments_ = 100; /**< Index used to number log segments (this is an mc_rtc specific) */
-  unsigned nbMPCFailures_ = 0; /**< Number of times the walking pattern generator failed */
+  std::string observerPipelineName_ = "LIPMWalkingObserverPipeline"; /**< Name of the observer pipeline used for
+                                                                        updating the real robot for CoM estimation */
 };
 
 } // namespace lipm_walking

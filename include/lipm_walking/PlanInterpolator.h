@@ -51,6 +51,8 @@ struct PlanInterpolator
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+  using SE2d = lipm_walking::utils::SE2d;
+
   static constexpr double DEFAULT_EXTRA_STEP_WIDTH = 0.; // [m]
   static constexpr double IN_PLACE_EXTRA_STEP_WIDTH = 0.02; // [m]
   static constexpr double IN_PLACE_MAX_STEP_ANGLE = 45.; // [deg]
@@ -142,7 +144,7 @@ struct PlanInterpolator
    * \returns gait Current gait string.
    *
    */
-  std::string gait() const
+  std::string gait() const noexcept
   {
     if(gait_ == Gait::Shuffle)
     {
@@ -274,6 +276,23 @@ struct PlanInterpolator
     worldReference_ = worldReference;
   }
 
+  /**
+   * @brief Checks whether the plan has been recomputed (run() was called)
+   * @warning This function is intended to be used only once to check and handle the updated plan status.
+   *          All subsequent calls of this function until the next call of run() will return false
+   * @return true If the plan has been updated
+   * @return false Otherwise
+   */
+  bool checkPlanUpdated()
+  {
+    if(hasRun_)
+    {
+      hasRun_ = false;
+      return true;
+    }
+    return false;
+  }
+
 private:
   /** Restore default planning settings.
    *
@@ -315,10 +334,6 @@ private:
    */
   void updateWorldTarget_(const Eigen::Vector3d & desired);
 
-public:
-  bool isShown = false; /**< Is the footstep interpolator tab displayed? */
-  unsigned nbIter = 0; /**< Number of times the interpolator was called */
-
 private:
   FootstepPlan customPlan_;
   Gait gait_ = Gait::Walk;
@@ -341,6 +356,7 @@ private:
   std::vector<Eigen::Vector3d> supportPathDisplay_;
   sva::PTransformd worldReference_;
   unsigned nbFootsteps_ = 0;
+  bool hasRun_ = false; ///< Flag indicating whether the run method was called (plan has been updated)
 };
 
 } // namespace lipm_walking

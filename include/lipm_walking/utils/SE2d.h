@@ -31,6 +31,9 @@
 
 #include <SpaceVecAlg/SpaceVecAlg>
 
+namespace lipm_walking
+{
+
 namespace utils
 {
 
@@ -51,6 +54,21 @@ struct SE2d
    *
    */
   SE2d(double x = 0., double y = 0., double theta = 0.) : x(x), y(y), theta(theta) {}
+
+  SE2d(const Eigen::Vector3d & v) : x(v.x()), y(v.y()), theta(v.z()) {}
+
+  /** Initialize a new SE2 transform.
+   *
+   * Assumes that rotation is around the +z axis
+   *
+   * \param pose World pose
+   */
+  SE2d(const sva::PTransformd & pose)
+  {
+    x = pose.translation().x();
+    y = pose.translation().y();
+    theta = mc_rbdyn::rpyFromMat(pose.rotation()).z();
+  }
 
   /** Apply SE2 transform in horizontal plane of an SE3 frame.
    *
@@ -96,7 +114,7 @@ struct SE2d
    * \returns v Vector {x, y, theta} of transform coordinates.
    *
    */
-  inline Eigen::Vector3d vector()
+  inline const Eigen::Vector3d vector() const noexcept
   {
     return {x, y, theta};
   }
@@ -108,7 +126,7 @@ struct SE2d
    */
   inline Eigen::Vector3d vectorDegrees() const
   {
-    return {x, y, theta * 180. / M_PI};
+    return {x, y, mc_rtc::constants::toDeg(theta)};
   }
 
 public:
@@ -118,5 +136,10 @@ public:
 };
 
 } // namespace utils
+} // namespace lipm_walking
 
-using utils::SE2d;
+inline std::ostream & operator<<(std::ostream & os, const lipm_walking::utils::SE2d & se2d)
+{
+  os << se2d.x << ", " << se2d.y << ", " << se2d.theta;
+  return os;
+}

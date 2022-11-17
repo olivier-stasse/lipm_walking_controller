@@ -23,7 +23,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 14)
@@ -32,15 +32,22 @@ set(PROJECT_NAME lipm_walking_controller)
 set(PROJECT_DESCRIPTION "Walking controller based on linear inverted pendulum tracking")
 set(PROJECT_URL https://github.com/stephane-caron/lipm_walking_controller/)
 set(PROJECT_VERSION 1.6.0)
+set(PROJECT_USE_CMAKE_EXPORT TRUE)
+set(INSTALL_DOCUMENTATION OFF CACHE BOOL "")
+set(INSTALL_GENERATED_HEADERS OFF CACHE BOOL "" FORCE)
+set(INSTALL_PKG_CONFIG_FILE OFF CACHE BOOL "" FORCE)
+set(CXX_DISABLE_WERROR ON)
 
 include(cmake/base.cmake)
-set(CXX_DISABLE_WERROR True)
 
 project(${PROJECT_NAME} CXX)
 
-find_package(copra REQUIRED)
-find_package(mc_rtc REQUIRED)
-find_package(eigen-quadprog REQUIRED)
+add_project_dependency(copra REQUIRED)
+add_project_dependency(mc_rtc REQUIRED)
+if(NOT TARGET mc_rtc::mc_rtc_ros)
+  message(FATAL_ERROR "mc_rtc must be built with ROS support for this controller to work")
+endif()
+add_project_dependency(eigen-quadprog REQUIRED)
 
 if(EXISTS "${MC_RTC_LIBDIR}/mc_controller/etc/LIPMWalking.conf")
   message(FATAL_ERROR "\n \
@@ -50,4 +57,8 @@ if(EXISTS "${MC_RTC_LIBDIR}/mc_controller/etc/LIPMWalking.conf")
 ")
 endif()
 
+add_subdirectory(plugins/ExternalFootstepPlanner)
 add_subdirectory(src)
+
+set(PACKAGE_EXTRA_MACROS "set(LIPM_WALKING_STATES_LIBRARIES \"${MC_CONTROLLER_INSTALL_PREFIX}/lipm_walking_controller/states\")
+set(LIPM_WALKING_STATES_FILES \"\${LIPM_WALKING_STATES_LIBRARIES}/data\")")

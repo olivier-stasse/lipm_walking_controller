@@ -30,15 +30,51 @@
 namespace lipm_walking
 {
 
+using ContactState = mc_tasks::lipm_stabilizer::ContactState;
+
+bool states::DoubleSupport::checkInitialSupport()
+{
+  const auto & ctl = controller();
+  auto Fzs = ctl.robot().frame(ctl.prevContact().surfaceName).wrench().force().z();
+  auto Fzt = ctl.robot().frame(ctl.nextContact().surfaceName).wrench().force().z();
+  return Fzs >= minSupportForce_ && Fzt >= minSupportForce_ && goodInitialSupport_;
+}
+
+void states::DoubleSupport::handleExternalPlan()
+{
+  auto & ctl = controller();
+
+  if(ctl.externalFootstepPlanner.hasPlan(ExternalPlanner::DoubleSupport))
+  {
+    ctl.plan.resetContacts(ctl.externalFootstepPlanner.plan());
+    ctl.updatePlan("external");
+  }
+  else if(ctl.externalFootstepPlanner.planRequested(ExternalPlanner::DoubleSupport))
+  {
+    mc_rtc::log::warning("[{}] An external plan was requested for this DSP but is not available, pause walking",
+                         name());
+    ctl.externalFootstepPlanner.cancelRequest();
+    stopDuringThisDSP_ = true;
+    ctl.pauseWalking = true;
+  }
+}
+
 void states::DoubleSupport::start()
 {
   auto & ctl = controller();
+  ctl.walkingState = WalkingState::DoubleSupport;
 
   double phaseDuration = ctl.doubleSupportDuration(); // careful! side effect here
 
   duration_ = phaseDuration;
   initLeftFootRatio_ = ctl.leftFootRatio();
-  remTime_ = (phaseDuration > ctl.timeStep) ? phaseDuration : -ctl.timeStep;
+  if(phaseDuration <= ctl.timeStep)
+  {
+    mc_rtc::log::error_and_throw<std::invalid_argument>("[{}] The double support phase duration cannot be "
+                                                        "less than the controller's timestep (requested {} <= {})",
+                                                        name(), duration_, ctl.timeStep);
+  }
+  remTime_ = duration_;
   stateTime_ = 0.;
   stopDuringThisDSP_ = ctl.pauseWalking;
   if(phaseDuration > ctl.timeStep)
@@ -50,67 +86,52 @@ void states::DoubleSupport::start()
     timeSinceLastPreviewUpdate_ = 0.;
   }
 
+  if(ctl.plan.name == "external")
+  {
+    handleExternalPlan();
+  }
+
   const std::string & targetSurfaceName = ctl.targetContact().surfaceName;
   auto actualTargetPose = ctl.controlRobot().surfacePose(targetSurfaceName);
   ctl.plan.goToNextFootstep(actualTargetPose);
+
   if(ctl.isLastDSP()) // called after goToNextFootstep
   {
     stopDuringThisDSP_ = true;
   }
 
-  stabilizer().contactState(ContactState::DoubleSupport);
   if(ctl.prevContact().surfaceName == "LeftFootCenter")
   {
-    stabilizer().setContact(stabilizer().leftFootTask, ctl.prevContact());
-    stabilizer().setContact(stabilizer().rightFootTask, ctl.supportContact());
+    ctl.setContacts({{ContactState::Left, ctl.prevContact().pose}, {ContactState::Right, ctl.supportContact().pose}});
     targetLeftFootRatio_ = 0.;
   }
   else // (ctl.prevContact().surfaceName == "RightFootCenter")
   {
-    stabilizer().setContact(stabilizer().leftFootTask, ctl.supportContact());
-    stabilizer().setContact(stabilizer().rightFootTask, ctl.prevContact());
+    ctl.setContacts({{ContactState::Left, ctl.supportContact().pose}, {ContactState::Right, ctl.prevContact().pose}});
     targetLeftFootRatio_ = 1.;
   }
+
+  if(stateTime_ <= maxAbortPercent_ * duration_ && !checkInitialSupport())
+  {
+    mc_rtc::log::warning("[DoubleSupport] Stepping aborted at t = {}, poor contact detected!", stateTime_);
+    mc_rtc::log::info("[DoubleSupport] Stopping during this DSP, remaining time: {}", remTime_);
+    stopDuringThisDSP_ = true;
+  }
+
   if(stopDuringThisDSP_)
   {
     targetLeftFootRatio_ = 0.5;
   }
-  stabilizer().addTasks(ctl.solver());
 
   logger().addLogEntry("rem_phase_time", [this]() { return remTime_; });
-  logger().addLogEntry("support_xmax",
-                       [&ctl]() { return std::max(ctl.prevContact().xmax(), ctl.supportContact().xmax()); });
-  logger().addLogEntry("support_xmin",
-                       [&ctl]() { return std::min(ctl.prevContact().xmin(), ctl.supportContact().xmin()); });
-  logger().addLogEntry("support_ymax",
-                       [&ctl]() { return std::max(ctl.prevContact().ymax(), ctl.supportContact().ymax()); });
-  logger().addLogEntry("support_ymin",
-                       [&ctl]() { return std::min(ctl.prevContact().ymin(), ctl.supportContact().ymin()); });
-  logger().addLogEntry("support_zmax",
-                       [&ctl]() { return std::max(ctl.prevContact().zmax(), ctl.supportContact().zmax()); });
-  logger().addLogEntry("support_zmin",
-                       [&ctl]() { return std::min(ctl.prevContact().zmin(), ctl.supportContact().zmin()); });
   logger().addLogEntry("walking_phase", []() { return 2.; });
-
-  if(stopDuringThisDSP_)
-  {
-    ctl.pauseWalking = false;
-  }
 
   runState(); // don't wait till next cycle to update reference and tasks
 }
 
 void states::DoubleSupport::teardown()
 {
-  stabilizer().removeTasks(controller().solver());
-
   logger().removeLogEntry("rem_phase_time");
-  logger().removeLogEntry("support_xmax");
-  logger().removeLogEntry("support_xmin");
-  logger().removeLogEntry("support_ymax");
-  logger().removeLogEntry("support_ymin");
-  logger().removeLogEntry("support_zmax");
-  logger().removeLogEntry("support_zmin");
   logger().removeLogEntry("walking_phase");
 }
 
@@ -129,9 +150,9 @@ void states::DoubleSupport::runState()
   ctl.leftFootRatio(x * initLeftFootRatio_ + (1. - x) * targetLeftFootRatio_);
 
   ctl.preview->integrate(pendulum(), dt);
-  pendulum().completeIPM(ctl.prevContact());
-  pendulum().resetCoMHeight(ctl.plan.comHeight(), ctl.prevContact());
-  stabilizer().run();
+  pendulum().completeIPM(ctl.prevContact().p(), ctl.prevContact().normal());
+  pendulum().resetCoMHeight(ctl.plan.comHeight(), ctl.prevContact().p(), ctl.prevContact().normal());
+  controller().stabilizer()->target(pendulum().com(), pendulum().comd(), pendulum().comdd(), pendulum().zmp());
 
   remTime_ -= dt;
   stateTime_ += dt;
@@ -141,6 +162,7 @@ void states::DoubleSupport::runState()
 bool states::DoubleSupport::checkTransitions()
 {
   auto & ctl = controller();
+
   if(!stopDuringThisDSP_ && remTime_ < 0.)
   {
     output("SingleSupport");
@@ -183,4 +205,4 @@ void states::DoubleSupport::updatePreview()
 
 } // namespace lipm_walking
 
-EXPORT_SINGLE_STATE("DoubleSupport", lipm_walking::states::DoubleSupport)
+EXPORT_SINGLE_STATE("LIPMWalking::DoubleSupport", lipm_walking::states::DoubleSupport)
