@@ -93,7 +93,6 @@ private:
   double minSupportForce_ = 50;
   bool goodInitialSupport_ = true;
   double maxAbortPercent_ = 0.1; // Percentage util which we still allow to stop
-
 };
 
 } // namespace states

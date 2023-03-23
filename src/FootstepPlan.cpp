@@ -209,16 +209,9 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
 {
   using namespace mc_rtc::gui;
 
-  gui.addElement({"Walking"},
-                 mc_rtc::gui::NumberInput("Torso Pitch [deg]",
-                                          [this]()
-                                          {
-                                            return mc_rtc::constants::toDeg(torsoPitch_);
-                                          },
-                                          [this](double p)
-                                          {
-                                            torsoPitch(mc_rtc::constants::toRad(p));
-                                          }));
+  gui.addElement({"Walking"}, mc_rtc::gui::NumberInput(
+                                  "Torso Pitch [deg]", [this]() { return mc_rtc::constants::toDeg(torsoPitch_); },
+                                  [this](double p) { torsoPitch(mc_rtc::constants::toRad(p)); }));
 
   auto footStepPolygon = [](const Contact & contact) {
     std::vector<Eigen::Vector3d> polygon;

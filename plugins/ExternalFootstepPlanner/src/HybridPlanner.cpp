@@ -35,7 +35,7 @@ void HybridPlanner::activate()
                              [this](const Eigen::Vector3d & velocity) { setVelocity(velocity); });
   ctl_.datastore().make_call("HybridPlanner::GetVelocity", [this]() { return velocity_; });
   ctl_.gui()->addElement({"Hybrid Footstep Planner"},
-                         mc_rtc::gui::Label("Support Foot", [this]() { return supportFootName_; } ),
+                         mc_rtc::gui::Label("Support Foot", [this]() { return supportFootName_; }),
                          mc_rtc::gui::ArrayInput(
                              "Velocity", [this]() -> const Eigen::Vector3d & { return velocity_; },
                              [this](const Eigen::Vector3d & vel) { this->setVelocity(vel); }));
