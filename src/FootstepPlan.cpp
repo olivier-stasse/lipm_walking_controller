@@ -265,13 +265,14 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
                  Polygon("TargetContact", targetContactPolygonConf,
                          [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
                  Polygon("FootstepPlan Left", leftPolygonConf,
-                         [this, contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
+                         [contactsPolygons]() { return contactsPolygons("LeftFootCenter"); }),
                  Polygon("FootstepPlan Right", rightPolygonConf,
-                         [this, contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
+                         [contactsPolygons]() { return contactsPolygons("RightFootCenter"); }));
 }
 
 void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
 {
+  gui.removeElement({"Walking"}, "Torso Pitch [deg]");
   gui.removeCategory({"Markers", "Footsteps", "Plan"});
 }
 
