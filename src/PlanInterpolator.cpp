@@ -48,7 +48,8 @@ void PlanInterpolator::addGUIElements()
       Trajectory("Support_Path", [this]() -> const std::vector<Eigen::Vector3d> & { return supportPathDisplay_; }),
       XYTheta(
           "World target [m, rad]",
-          [this]() -> Eigen::VectorXd {
+          [this]() -> Eigen::VectorXd
+          {
             Eigen::Vector3d targetLocal;
             targetLocal << targetPose_.pos(), 0.;
             Eigen::Matrix3d rotLocal = mc_rbdyn::rpyToMat({0., 0., targetPose_.theta});
@@ -69,19 +70,22 @@ void PlanInterpolator::addGUIElements()
       ComboInput(
           "Lead foot", {"Left", "Right"},
           [this]() -> std::string { return (startWithRightFootstep_) ? "Right" : "Left"; },
-          [this](const std::string & footName) {
+          [this](const std::string & footName)
+          {
             startWithRightFootstep_ = (footName == "Right");
             run();
           }),
       NumberInput(
           "Desired step angle [deg]", [this]() { return desiredStepAngle_ * 180. / M_PI; },
-          [this](double angleDeg) {
+          [this](double angleDeg)
+          {
             desiredStepAngle_ = clamp(angleDeg, 0., IN_PLACE_MAX_STEP_ANGLE) * M_PI / 180.;
             run();
           }),
       NumberInput(
           "Desired step length [m]", [this]() { return desiredStepLength_; },
-          [this](double length) {
+          [this](double length)
+          {
             bool isLateral = (customPlan_.name == "custom_lateral");
             double maxLength = (isLateral) ? MAX_LATERAL_STEP_LENGTH : MAX_SAGITTAL_STEP_LENGTH;
             desiredStepLength_ = clamp(length, MIN_STEP_LENGTH, maxLength);
@@ -89,32 +93,37 @@ void PlanInterpolator::addGUIElements()
           }),
       NumberInput(
           "Extra step width [m]", [this]() { return extraStepWidth_; },
-          [this](double width) {
+          [this](double width)
+          {
             extraStepWidth_ = clamp(width, 0., MAX_EXTRA_STEP_WIDTH);
             run();
           }),
       NumberInput(
           "Initial tangent [deg]", [this]() { return -initPose_.theta * 180. / M_PI; },
-          [this](double angle) {
+          [this](double angle)
+          {
             initPose_.theta = clamp(-angle * M_PI / 180., -2 * M_PI, 2 * M_PI);
             run();
           }),
       NumberInput(
           "Scale initial tangent", [this]() { return supportPath_.extraInitVelScaling(); },
-          [this](double s) {
+          [this](double s)
+          {
             supportPath_.extraInitVelScaling(s);
             run();
           }),
       NumberInput(
           "Scale target tangent", [this]() { return supportPath_.extraTargetVelScaling(); },
-          [this](double s) {
+          [this](double s)
+          {
             supportPath_.extraTargetVelScaling(s);
             run();
           }),
       ArrayInput(
           "Walk target from current", {"x [m]", "y [m]", "theta [deg]"},
           [this]() { return targetPose_.vectorDegrees(); },
-          [this](const Eigen::Vector3d & desired) {
+          [this](const Eigen::Vector3d & desired)
+          {
             updateLocalTarget_(SE2d(desired.x(), desired.y(), desired.z() * M_PI / 180.));
             run();
           }),

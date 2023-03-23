@@ -213,7 +213,8 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
                                   "Torso Pitch [deg]", [this]() { return mc_rtc::constants::toDeg(torsoPitch_); },
                                   [this](double p) { torsoPitch(mc_rtc::constants::toRad(p)); }));
 
-  auto footStepPolygon = [](const Contact & contact) {
+  auto footStepPolygon = [](const Contact & contact)
+  {
     std::vector<Eigen::Vector3d> polygon;
     polygon.push_back(contact.vertex0());
     polygon.push_back(contact.vertex1());
@@ -222,7 +223,8 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
     return polygon;
   };
 
-  auto contactsPolygons = [this, footStepPolygon](const std::string & surfaceName) {
+  auto contactsPolygons = [this, footStepPolygon](const std::string & surfaceName)
+  {
     std::vector<std::vector<Eigen::Vector3d>> polygons;
     const auto & contacts = contacts_;
     for(unsigned i = 0; i < contacts.size(); i++)

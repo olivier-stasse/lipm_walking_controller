@@ -40,12 +40,12 @@ About the installation of OnlineFootstepPlanner, please visit [its page](https:/
 ___
 ## How to build
 
-#### 1. download this repository: 
+#### 1. download this repository:
 
 ``$ git clone git@github.com:TsuruMasato/lipm_walking_controller.git `` (default branch "rebase_stabilizer_ana")
 
 
-#### 2. go into the repository and make "build" directory: 
+#### 2. go into the repository and make "build" directory:
 
 ``$ mkdir build``
 
@@ -173,5 +173,3 @@ _The stabilizer task becomes enable, and HRP4CR starts balancing._
 
 
 ##### Left Joystick leads the robot walking foward/backward/left/right, and Right Joystick makes him turn.
-
-

@@ -25,24 +25,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Setup extra mirrors
-      run: |
-        set -x
-        set -e
-        sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-        curl -1sLf http://packages.ros.org/ros.key | sudo apt-key add -
-        curl -1sLf 'https://dl.cloudsmith.io/public/mc-rtc/head/setup.deb.sh' | sudo -E bash
-    - name: Install ROS
-      run: |
-        set -x
-        set -e
-        sudo apt-get install -qq ros-noetic-ros-base
-        . /opt/ros/noetic/setup.bash
-        for var in `env|grep -i ROS|sed -e's/=.*//'`
-        do
-          echo "${var}=${!var}" >> $GITHUB_ENV
-        done
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
@@ -51,7 +34,12 @@ jobs:
         compiler: ${{ matrix.compiler }}
         build-type: ${{ matrix.build-type }}
         ubuntu: |
-          apt: libeigen3-dev doxygen doxygen-latex libboost-all-dev libmc-rtc-dev gfortran libcopra-dev ros-noetic-mc-rtc-plugin
+          apt-mirrors:
+            mc-rtc:
+              cloudsmith: mc-rtc/head
+          apt: libeigen3-dev doxygen doxygen-latex libboost-all-dev libmc-rtc-dev gfortran libcopra-dev
+        ros: |
+          apt: ros-base mc-rtc-plugin
     - name: Build and test
       uses: jrl-umi3218/github-actions/build-cmake-project@master
       with:
@@ -59,7 +47,7 @@ jobs:
         build-type: ${{ matrix.build-type }}
     - name: Upload documentation
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-18.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc' && github.ref == 'refs/heads/master'
+      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc' && github.ref == 'refs/heads/master'
       uses: jrl-umi3218/github-actions/upload-documentation@master
       with:
         # upload doc
@@ -67,7 +55,7 @@ jobs:
         GH_PAGES_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}
     - name: Run JVRC1 simulation
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-18.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
       run: |
         set -x
         sudo apt-get install -qq mc-openrtm jvrc-choreonoid xvfb ffmpeg mesa-utils fluxbox xserver-xorg xserver-xorg-core xserver-xorg-video-all libwayland-egl1-mesa
@@ -96,8 +84,8 @@ jobs:
         tar czf /tmp/simulation/log.tar.gz mc-control-LIPMWalking-latest.bin
     - name: Upload simulation data
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-18.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
-      uses: actions/upload-artifact@v1
+      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
+      uses: actions/upload-artifact@v3
       with:
         name: simulation
         path: /tmp/simulation

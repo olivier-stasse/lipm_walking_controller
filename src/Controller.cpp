@@ -160,9 +160,12 @@ Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
   }
 
   // Update observers
-  datastore().make_call("KinematicAnchorFrame::" + robot().name(), [this](const mc_rbdyn::Robot & robot) {
-    return sva::interpolate(robot.surfacePose("RightFootCenter"), robot.surfacePose("LeftFootCenter"), leftFootRatio_);
-  });
+  datastore().make_call("KinematicAnchorFrame::" + robot().name(),
+                        [this](const mc_rbdyn::Robot & robot)
+                        {
+                          return sva::interpolate(robot.surfacePose("RightFootCenter"),
+                                                  robot.surfacePose("LeftFootCenter"), leftFootRatio_);
+                        });
 
   mc_rtc::log::success("LIPMWalking controller init done.");
 }
@@ -207,15 +210,18 @@ void Controller::addGUIElements(std::shared_ptr<mc_rtc::gui::StateBuilder> gui)
 
   gui->addElement({"Walking", "Main"},
                   Button("# EMERGENCY STOP",
-                         [this]() {
+                         [this]()
+                         {
                            mc_rtc::log::error("EMERGENCY STOP!");
                            emergencyStop = true;
                            this->interrupt();
                          }),
-                  Button("Reset", [this]() {
-                    mc_rtc::log::warning("Reset to Initial state");
-                    this->resume("Initial");
-                  }));
+                  Button("Reset",
+                         [this]()
+                         {
+                           mc_rtc::log::warning("Reset to Initial state");
+                           this->resume("Initial");
+                         }));
 
   gui->addElement({"Walking", "CoM"}, Label("Plan name", [this]() { return plan.name; }));
 
@@ -242,14 +248,16 @@ void Controller::addGUIElements(std::shared_ptr<mc_rtc::gui::StateBuilder> gui)
                       [this](double duration) { plan.initDSPDuration(duration); }),
                   NumberInput(
                       "SSP duration [s]", [this]() { return plan.singleSupportDuration(); },
-                      [this](double duration) {
+                      [this](double duration)
+                      {
                         constexpr double T = ModelPredictiveControl::SAMPLING_PERIOD;
                         duration = std::round(duration / T) * T;
                         plan.singleSupportDuration(duration);
                       }),
                   NumberInput(
                       "DSP duration [s]", [this]() { return plan.doubleSupportDuration(); },
-                      [this](double duration) {
+                      [this](double duration)
+                      {
                         constexpr double T = ModelPredictiveControl::SAMPLING_PERIOD;
                         duration = std::round(duration / T) * T;
                         plan.doubleSupportDuration(duration);
@@ -260,14 +268,16 @@ void Controller::addGUIElements(std::shared_ptr<mc_rtc::gui::StateBuilder> gui)
   gui->addElement(
       {"Walking", "Sole"},
       mc_rtc::gui::Label("Ankle offset",
-                         []() {
+                         []()
+                         {
                            return std::string{
                                "position of ankle w.r.t to left foot center. The corresponding offset for the right "
                                "foot is computed assuming that the feet are symetrical in the lateral direction"};
                          }),
       mc_rtc::gui::ArrayInput(
           "Left Ankle Offset", [this]() -> const Eigen::Vector2d & { return sole_.leftAnkleOffset; },
-          [this](const Eigen::Vector2d & offset) {
+          [this](const Eigen::Vector2d & offset)
+          {
             sole_.leftAnkleOffset = offset;
             mpc_.sole(sole_);
           }),

@@ -99,47 +99,50 @@ void OnlineFootstepPlanner::rosThread()
       // id tracking to make sure we have the correct answer)
       //   but this doesn't make it cancellable
       // - Or we need to integrate the planner here directly
-      futurePlan = std::async([this, &footstep_service]() -> boost::optional<Plan> {
-        auto request = Request{};
-        {
-          std::lock_guard<std::mutex> lock{requestMutex_};
-          request = request_;
-        }
-        auto req = FootStepPlanRequestService{};
-        auto assign_pose = [](const SE2d & goal, geometry_msgs::Pose2D & msg) {
-          msg.x = goal.x;
-          msg.y = goal.y;
-          msg.theta = goal.theta;
-        };
-        req.request.start_left.leg = FootStep::LEFT;
-        assign_pose(request.start_left_foot, req.request.start_left.pose);
-        req.request.start_right.leg = FootStep::RIGHT;
-        assign_pose(request.start_right_foot, req.request.start_right.pose);
-        req.request.end_left.leg = FootStep::LEFT;
-        assign_pose(request.goal_left_foot, req.request.end_left.pose);
-        req.request.end_right.leg = FootStep::RIGHT;
-        assign_pose(request.goal_right_foot, req.request.end_right.pose);
-        req.request.supportLeg = static_cast<uint8_t>(request.support_foot);
-        req.request.allowed_time = request.allowed_time;
-        auto res = footstep_service.call(req);
-        planRequested_ = false;
-        auto optplan = boost::optional<Plan>{};
-        if(res)
-        {
-          Plan plan;
-          for(const auto & footstep : req.response.plan)
+      futurePlan = std::async(
+          [this, &footstep_service]() -> boost::optional<Plan>
           {
-            plan.contacts.emplace_back(static_cast<Foot>(footstep.leg),
-                                       SE2d{footstep.pose.x, footstep.pose.y, footstep.pose.theta});
-          }
-          optplan = plan;
-        }
-        else
-        {
-          mc_rtc::log::error("[{}] Service call failed, no new plan available", name());
-        }
-        return optplan;
-      });
+            auto request = Request{};
+            {
+              std::lock_guard<std::mutex> lock{requestMutex_};
+              request = request_;
+            }
+            auto req = FootStepPlanRequestService{};
+            auto assign_pose = [](const SE2d & goal, geometry_msgs::Pose2D & msg)
+            {
+              msg.x = goal.x;
+              msg.y = goal.y;
+              msg.theta = goal.theta;
+            };
+            req.request.start_left.leg = FootStep::LEFT;
+            assign_pose(request.start_left_foot, req.request.start_left.pose);
+            req.request.start_right.leg = FootStep::RIGHT;
+            assign_pose(request.start_right_foot, req.request.start_right.pose);
+            req.request.end_left.leg = FootStep::LEFT;
+            assign_pose(request.goal_left_foot, req.request.end_left.pose);
+            req.request.end_right.leg = FootStep::RIGHT;
+            assign_pose(request.goal_right_foot, req.request.end_right.pose);
+            req.request.supportLeg = static_cast<uint8_t>(request.support_foot);
+            req.request.allowed_time = request.allowed_time;
+            auto res = footstep_service.call(req);
+            planRequested_ = false;
+            auto optplan = boost::optional<Plan>{};
+            if(res)
+            {
+              Plan plan;
+              for(const auto & footstep : req.response.plan)
+              {
+                plan.contacts.emplace_back(static_cast<Foot>(footstep.leg),
+                                           SE2d{footstep.pose.x, footstep.pose.y, footstep.pose.theta});
+              }
+              optplan = plan;
+            }
+            else
+            {
+              mc_rtc::log::error("[{}] Service call failed, no new plan available", name());
+            }
+            return optplan;
+          });
     }
 
     if(futurePlan.valid())

@@ -103,7 +103,8 @@ void ExternalPlanner::requestPlanLocalPositionTarget(const State state,
 
 std::vector<lipm_walking::Contact> ExternalPlanner::plan()
 {
-  auto convertPlan = [](const mc_plugin::ExternalFootstepPlanner::Plan & ext_plan) {
+  auto convertPlan = [](const mc_plugin::ExternalFootstepPlanner::Plan & ext_plan)
+  {
     std::vector<lipm_walking::Contact> contacts;
     unsigned i = 0;
     for(const auto & ext_contact : ext_plan.contacts)

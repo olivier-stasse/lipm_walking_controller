@@ -55,9 +55,11 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
   ctl.datastore().make_call("ExternalFootstepPlanner::Activate", [this, &gc]() { activate(gc); });
   ctl.datastore().make_call("ExternalFootstepPlanner::Deactivate", [this]() { deactivate(); });
   // Do we need replanning?
-  ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested", [this]() {
-    return worldPositionTargetChanged_ || localPositionTargetChanged_ || request_hybrid_plan_;
-  }); // joystick input uses "localPositionTargetChanged_"
+  ctl.datastore().make_call("ExternalFootstepPlanner::PlanningRequested",
+                            [this]()
+                            {
+                              return worldPositionTargetChanged_ || localPositionTargetChanged_ || request_hybrid_plan_;
+                            }); // joystick input uses "localPositionTargetChanged_"
   ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTargetChanged",
                             [this]() { return worldPositionTargetChanged_; });
   ctl.datastore().make_call("ExternalFootstepPlanner::WorldPositionTarget",
@@ -77,17 +79,19 @@ void ExternalFootstepPlannerPlugin::init(mc_control::MCGlobalController & gc, co
                             [this](const SE2d & localVelocity) { setLocalVelocityTarget(localVelocity); });
   ctl.datastore().make_call("ExternalFootstepPlanner::RequestHybridPlan", [this]() { request_hybrid_plan_ = true; });
   /* Tsuru add */
-  ctl.datastore().make_call(
-      "ExternalFootstepPlanner::SetJoystickVelocityTarget",
-      [this](const sensor_msgs::Joy & joystickInput) { setJoystickVelocityTarget(joystickInput); });
+  ctl.datastore().make_call("ExternalFootstepPlanner::SetJoystickVelocityTarget",
+                            [this](const sensor_msgs::Joy & joystickInput)
+                            { setJoystickVelocityTarget(joystickInput); });
 
   // Call this to request a new plan
-  ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan", [this](const Request & request) {
-    worldPositionTargetChanged_ = false;
-    localPositionTargetChanged_ = false;
-    request_hybrid_plan_ = false;
-    planner_->requestPlan(request);
-  });
+  ctl.datastore().make_call("ExternalFootstepPlanner::RequestPlan",
+                            [this](const Request & request)
+                            {
+                              worldPositionTargetChanged_ = false;
+                              localPositionTargetChanged_ = false;
+                              request_hybrid_plan_ = false;
+                              planner_->requestPlan(request);
+                            });
   ctl.datastore().make_call("ExternalFootstepPlanner::HasPlan", [this]() { return planner_->hasPlan(); });
   ctl.datastore().make_call("ExternalFootstepPlanner::PopPlan", [this]() { return planner_->popPlan(); });
 
@@ -157,10 +161,10 @@ void ExternalFootstepPlannerPlugin::changePlanner(mc_control::MCGlobalController
   }
   else if(plannerName == "HybridPlanner")
   {
-    //#ifdef USE_HYBRID_PLANNER
+    // #ifdef USE_HYBRID_PLANNER
     planner_.reset(new HybridPlanner{gc.controller()});
     planner_->configure(config_);
-    //#endif
+    // #endif
   }
 
   if(plannerName == "DummyPlanner")
@@ -263,28 +267,32 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
   else if(targetType == "Local Velocity")
   {
     mc_rtc::log::warning("[{}] Local Veloctity target is not implemented yet.", name());
-    auto makeSliders = [this, category, &gui]() {
+    auto makeSliders = [this, category, &gui]()
+    {
       gui.removeElement(category, "Local Velocity [x]");
       gui.removeElement(category, "Local Velocity [y]");
       gui.removeElement(category, "Local Velocity [theta]");
       gui.addElement(this, category,
                      NumberSlider(
                          "Local Velocity [x]", [this]() { return localVelocityTarget_.x; },
-                         [this](double vx) {
+                         [this](double vx)
+                         {
                            localVelocityTarget_.x = vx;
                            setLocalVelocityTarget(localVelocityTarget_);
                          },
                          -planningDistance_.x, planningDistance_.x),
                      NumberSlider(
                          "Local Velocity [y]", [this]() { return localVelocityTarget_.y; },
-                         [this](double vy) {
+                         [this](double vy)
+                         {
                            localVelocityTarget_.y = vy;
                            setLocalVelocityTarget(localVelocityTarget_);
                          },
                          -planningDistance_.y, planningDistance_.y),
                      NumberSlider(
                          "Local Velocity [theta]", [this]() { return localVelocityTarget_.theta; },
-                         [this](double vy) {
+                         [this](double vy)
+                         {
                            localVelocityTarget_.theta = vy;
                            setLocalVelocityTarget(localVelocityTarget_);
                          },
@@ -298,7 +306,8 @@ void ExternalFootstepPlannerPlugin::changeTargetType(const std::string & targetT
                        [this]() -> std::array<double, 3> {
                          return {planningDistance_.x, planningDistance_.y, planningDistance_.theta};
                        },
-                       [this, makeSliders](const std::array<double, 3> & d) {
+                       [this, makeSliders](const std::array<double, 3> & d)
+                       {
                          setLocalVelocityPlanningDistance({d[0], d[1], d[2]});
                          makeSliders();
                        }));
@@ -328,7 +337,8 @@ void ExternalFootstepPlannerPlugin::activate(mc_control::MCGlobalController & gc
   gui.addElement(this, category_,
                  ComboInput(
                      "Planner", supportedPlanners_, [this]() { return plannerName_; },
-                     [this, &gc](const std::string & planner) {
+                     [this, &gc](const std::string & planner)
+                     {
                        changePlanner(gc, planner);
                        activate(gc);
                      }));

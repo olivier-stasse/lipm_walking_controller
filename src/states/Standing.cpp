@@ -326,9 +326,8 @@ void states::Standing::startWalking()
     gui()->removeElement({"Walking", "Main"}, "Resume walking");
     ctl.pauseWalking = false;
   }
-  gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Pause walking", [&ctl]() {
-                      ctl.pauseWalkingCallback(/* verbose = */ false);
-                    }));
+  gui()->addElement({"Walking", "Main"}, mc_rtc::gui::Button("Pause walking", [&ctl]()
+                                                             { ctl.pauseWalkingCallback(/* verbose = */ false); }));
 }
 
 } // namespace lipm_walking
