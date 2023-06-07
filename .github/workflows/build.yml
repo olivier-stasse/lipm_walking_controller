@@ -50,8 +50,7 @@ jobs:
       if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc' && github.ref == 'refs/heads/master'
       uses: jrl-umi3218/github-actions/upload-documentation@master
       with:
-        # upload doc
-        GH_USER: arntanguy
+        GH_USER: gergondet
         GH_PAGES_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}
     - name: Run JVRC1 simulation
       # Only run on master branch and for one configuration
