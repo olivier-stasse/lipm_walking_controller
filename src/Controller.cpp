@@ -551,4 +551,10 @@ bool Controller::updatePreview()
     return false;
   }
 }
+
+bool Controller::isInOpenLoopTicker() const
+{
+  return gui()->hasElement({"Ticker"}, "Stop") && !datastore().has("Log::Replay");
+}
+
 } // namespace lipm_walking

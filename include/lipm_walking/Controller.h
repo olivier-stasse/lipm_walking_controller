@@ -301,6 +301,9 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
     return plan.targetContact();
   }
 
+  /** Returns true if the controller is running in an open-loop ticker */
+  bool isInOpenLoopTicker() const;
+
 public: /* visible to FSM states */
   WalkingState walkingState = WalkingState::Standby; /**< Current state */
   FootstepPlan plan; /**< Current footstep plan */

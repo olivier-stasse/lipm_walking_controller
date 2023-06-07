@@ -111,7 +111,7 @@ void states::DoubleSupport::start()
     targetLeftFootRatio_ = 1.;
   }
 
-  if(stateTime_ <= maxAbortPercent_ * duration_ && !checkInitialSupport())
+  if(!ctl.isInOpenLoopTicker() && stateTime_ <= maxAbortPercent_ * duration_ && !checkInitialSupport())
   {
     mc_rtc::log::warning("[DoubleSupport] Stepping aborted at t = {}, poor contact detected!", stateTime_);
     mc_rtc::log::info("[DoubleSupport] Stopping during this DSP, remaining time: {}", remTime_);
