@@ -70,7 +70,10 @@ struct MC_CONTROL_DLLAPI Controller : public mc_control::fsm::Controller
    * \param config Configuration dictionary.
    *
    */
-  Controller(std::shared_ptr<mc_rbdyn::RobotModule> robot, double dt, const mc_rtc::Configuration & config);
+  Controller(mc_rbdyn::RobotModulePtr robot,
+             double dt,
+             const mc_rtc::Configuration & config,
+             mc_control::ControllerParameters params = {});
 
   /** Reset controller.
    *

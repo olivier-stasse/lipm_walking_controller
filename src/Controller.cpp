@@ -36,10 +36,11 @@ using Color = mc_rtc::gui::Color;
 namespace lipm_walking
 {
 
-Controller::Controller(std::shared_ptr<mc_rbdyn::RobotModule> robotModule,
+Controller::Controller(mc_rbdyn::RobotModulePtr robotModule,
                        double dt,
-                       const mc_rtc::Configuration & config)
-: mc_control::fsm::Controller(robotModule, dt, config), planInterpolator(gui()), externalFootstepPlanner(*this),
+                       const mc_rtc::Configuration & config,
+                       mc_control::ControllerParameters params)
+: mc_control::fsm::Controller(robotModule, dt, config, params), planInterpolator(gui()), externalFootstepPlanner(*this),
   halfSitPose(controlRobot().mbc().q)
 {
   auto robotConfig = config("robot_models")(controlRobot().name());
