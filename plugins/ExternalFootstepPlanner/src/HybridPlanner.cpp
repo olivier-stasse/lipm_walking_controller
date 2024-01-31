@@ -24,7 +24,7 @@ void HybridPlanner::configure(const mc_rtc::Configuration & config)
   auto conf = config("HybridPlanner", mc_rtc::Configuration{});
   conf.load(ctl_.config()("HybridPlanner"));
   mc_rtc::log::info("[HybridPlanner] Requesting configuration: {}", conf.dump(true));
-  ctl_.datastore().assign<mc_rtc::Configuration>("footsteps_planner::planner_config", conf);
+  ctl_.datastore().call<void, const mc_rtc::Configuration &>("footsteps_planner::configure", conf);
   Tp_ = conf("Tp");
   delta_ = conf("delta");
 }

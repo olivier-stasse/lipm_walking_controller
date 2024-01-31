@@ -137,9 +137,12 @@ void states::Initial::internalReset()
   {
     auto X_0_fb = ctl.supportContact().robotTransform(ctl.controlRobot());
     ctl.controlRobot().posW(X_0_fb);
-    ctl.controlRobot().velW(sva::MotionVecd::Zero());
     ctl.realRobot().posW(X_0_fb);
-    ctl.realRobot().velW(sva::MotionVecd::Zero());
+    if(ctl.controlRobot().mb().joint(0).dof() == 6)
+    {
+      ctl.controlRobot().velW(sva::MotionVecd::Zero());
+      ctl.realRobot().velW(sva::MotionVecd::Zero());
+    }
   }
 
   // (2) update contact frames to coincide with surface ones
