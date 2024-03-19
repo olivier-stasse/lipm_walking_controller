@@ -27,4 +27,30 @@
 
 #include <lipm_walking/Controller.h>
 
-CONTROLLER_CONSTRUCTOR("LIPMWalking", lipm_walking::Controller)
+extern "C"
+{
+  CONTROLLER_MODULE_API void MC_RTC_CONTROLLER(std::vector<std::string> & names)
+  {
+    CONTROLLER_CHECK_VERSION("LIPMWalking")
+    names.emplace_back("LIPMWalking");
+  }
+
+  CONTROLLER_MODULE_API void destroy(mc_control::MCController * ptr)
+  {
+    delete ptr;
+  }
+
+  CONTROLLER_MODULE_API unsigned int create_args_required()
+  {
+    return 4;
+  }
+
+  CONTROLLER_MODULE_API mc_control::MCController * create(const std::string & name,
+                                                          const mc_rbdyn::RobotModulePtr & robot,
+                                                          const double & dt,
+                                                          const mc_control::Configuration & conf)
+  {
+    return new lipm_walking::Controller(
+        robot, dt, conf, mc_control::ControllerParameters{}.load_robot_config_into({}).overwrite_config(true));
+  }
+}
