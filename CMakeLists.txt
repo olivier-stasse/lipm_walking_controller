@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(PROJECT_NAME lipm_walking_controller)
 set(PROJECT_DESCRIPTION
