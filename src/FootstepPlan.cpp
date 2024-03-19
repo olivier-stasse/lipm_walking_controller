@@ -256,6 +256,15 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
   targetContactPolygonConf.width = 0.01;
   targetContactPolygonConf.style = LineStyle::Solid;
 
+  gui.addElement({"Markers", "Footsteps", "Plan"}, mc_rtc::gui::Button("Print Plan (YAML)",
+                                                                       [this]
+                                                                       {
+                                                                         mc_rtc::Configuration conf;
+                                                                         this->save(conf);
+                                                                         mc_rtc::log::info("Plan:\n{}",
+                                                                                           conf.dump(true, true));
+                                                                       }));
+
   gui.addElement({"Markers", "Footsteps", "Plan"},
                  Polygon("TargetContact", targetContactPolygonConf,
                          [this, footStepPolygon]() { return footStepPolygon(targetContact()); }),
@@ -268,6 +277,7 @@ void FootstepPlan::addGUIElements(mc_rtc::gui::StateBuilder & gui)
 void FootstepPlan::removeGUIElements(mc_rtc::gui::StateBuilder & gui)
 {
   gui.removeElement({"Walking"}, "Torso Pitch [deg]");
+  gui.removeElement({"Walking"}, "Print Plan");
   gui.removeCategory({"Markers", "Footsteps", "Plan"});
 }
 
