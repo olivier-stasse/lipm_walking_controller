@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         build-type: [RelWithDebInfo, Debug]
         compiler: [gcc, clang]
 
@@ -47,14 +47,14 @@ jobs:
         build-type: ${{ matrix.build-type }}
     - name: Upload documentation
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc' && github.ref == 'refs/heads/master'
+      if: matrix.os == 'ubuntu-22.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc' && github.ref == 'refs/heads/master'
       uses: jrl-umi3218/github-actions/upload-documentation@master
       with:
         GH_USER: gergondet
         GH_PAGES_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}
     - name: Run JVRC1 simulation
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-22.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
       run: |
         set -x
         sudo apt-get install -qq mc-openrtm jvrc-choreonoid xvfb ffmpeg mesa-utils fluxbox xserver-xorg xserver-xorg-core xserver-xorg-video-all libwayland-egl1-mesa
@@ -83,7 +83,7 @@ jobs:
         tar czf /tmp/simulation/log.tar.gz mc-control-LIPMWalking-latest.bin
     - name: Upload simulation data
       # Only run on master branch and for one configuration
-      if: matrix.os == 'ubuntu-20.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-22.04' && matrix.build-type == 'RelWithDebInfo' && matrix.compiler == 'gcc'
       uses: actions/upload-artifact@v3
       with:
         name: simulation
