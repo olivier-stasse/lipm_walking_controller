@@ -51,8 +51,9 @@ add_project_dependency(copra REQUIRED)
 add_project_dependency(mc_rtc REQUIRED)
 if(NOT TARGET mc_rtc::mc_rtc_ros)
   message(
-    FATAL_ERROR
-      "mc_rtc must be built with ROS support for this controller to work")
+    WARNING
+      "mc_rtc was built without ROS support, some features won't be available (external footstep planner)"
+  )
 endif()
 add_project_dependency(eigen-quadprog REQUIRED)
 

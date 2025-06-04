@@ -29,6 +29,14 @@ install(
 
 install(DIRECTORY include/ExternalFootstepPlanner DESTINATION include)
 
+if(NOT TARGET mc_rtc::mc_rtc_ros)
+  message(
+    WARNING
+      "mc_rtc was built without ROS support, the ExternalFootstepPlanner plugin will not be built"
+  )
+  return()
+endif()
+
 set(ExternalFootstepPlanner_SRC src/ExternalFootstepPlanner.cpp
                                 src/DummyPlanner.cpp)
 
