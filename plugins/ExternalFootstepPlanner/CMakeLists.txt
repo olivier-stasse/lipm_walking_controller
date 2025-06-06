@@ -29,7 +29,8 @@ install(
 
 install(DIRECTORY include/ExternalFootstepPlanner DESTINATION include)
 
-if(NOT TARGET mc_rtc::mc_rtc_ros)
+find_package(ament_cmake QUIET)
+if(NOT TARGET mc_rtc::mc_rtc_ros OR ${ament_cmake_FOUND})
   message(
     WARNING
       "mc_rtc was built without ROS support, the ExternalFootstepPlanner plugin will not be built"
