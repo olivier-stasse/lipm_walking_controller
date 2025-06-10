@@ -39,11 +39,6 @@ struct State : mc_control::fsm::State
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  /** No configuration by default.
-   *
-   */
-  void configure(const mc_rtc::Configuration &) override {}
-
   /** Get controller.
    *
    * \returns controller Reference to controller.

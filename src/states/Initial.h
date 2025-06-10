@@ -47,8 +47,6 @@ namespace states
  */
 struct Initial : State
 {
-  void configure(const mc_rtc::Configuration & config) override;
-
   /** Start state.
    *
    */

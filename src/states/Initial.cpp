@@ -30,23 +30,28 @@
 namespace lipm_walking
 {
 
-void states::Initial::configure(const mc_rtc::Configuration & config)
-{
-  config("resetFloatingBaseToPlan", resetFloatingBaseToPlan_);
-  config("updateContactFramesToCurrentSurface", updateContactFramesToCurrentSurface_);
-  config("resetPosture", resetPosture_);
-  config("resetPendulumHeight", resetPendulumHeight_);
-}
-
 void states::Initial::start()
 {
   auto & ctl = controller();
   ctl.walkingState = WalkingState::Standby;
 
+  mc_rtc::log::info("initial config: {}", config_.dump(true, true));
+  config_("resetFloatingBaseToPlan", resetFloatingBaseToPlan_);
+  config_("updateContactFramesToCurrentSurface", updateContactFramesToCurrentSurface_);
+  config_("resetPosture", resetPosture_);
+  config_("resetPendulumHeight", resetPendulumHeight_);
   postureTaskIsActive_ = true;
   postureTaskWasActive_ = true;
   startStandingButton_ = false;
-  startStanding_ = ctl.config()("autoplay", false);
+  if(auto autoplayState = config_.find("autoplay"))
+  {
+    startStanding_ = *autoplayState;
+  }
+  else
+  {
+    startStanding_ = ctl.config()("autoplay", false);
+  }
+  mc_rtc::log::info("Start standing is {}", startStanding_);
 
   internalReset();
 
