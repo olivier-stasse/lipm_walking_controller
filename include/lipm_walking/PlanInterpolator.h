@@ -194,6 +194,14 @@ struct PlanInterpolator
    */
   FootstepPlan getPlan(std::string name)
   {
+    // Always compute custom plans
+    // This will generate a plan based on targetPose_
+    if(name.rfind("custom_", 0) == 0)
+    {
+      run();
+      return customPlan_;
+    }
+
     if(name == customPlan_.name)
     {
       return customPlan_;
@@ -293,6 +301,22 @@ struct PlanInterpolator
     return false;
   }
 
+  /** Update local SE2 target from an SE2 target expressed in local frame
+   *
+   * \param target desired (X, Y, Theta) element in local frame
+   *
+   * \note For this change to take effect you must call \ref run()
+   */
+  void updateLocalTarget_(const SE2d & target);
+
+  /** Update local SE2 target from world SE2 target.
+   *
+   * \param desired (X, Y, Theta) SE2 element expressed in world frame.
+   *
+   * \note For this change to take effect you must call \ref run()
+   */
+  void updateWorldTarget_(const Eigen::Vector3d & desired);
+
 private:
   /** Restore default planning settings.
    *
@@ -319,20 +343,6 @@ private:
    *
    */
   void runWalking_();
-
-  /** Update local SE2 target from an SE2 target expressed in local frame
-   *
-   * \param target desired (X, Y, Theta) element in local frame
-   *
-   */
-  void updateLocalTarget_(const SE2d & target);
-
-  /** Update local SE2 target from world SE2 target.
-   *
-   * \param desired (X, Y, Theta) SE2 element expressed in world frame.
-   *
-   */
-  void updateWorldTarget_(const Eigen::Vector3d & desired);
 
 private:
   FootstepPlan customPlan_;

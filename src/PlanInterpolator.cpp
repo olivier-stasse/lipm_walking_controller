@@ -443,6 +443,7 @@ void PlanInterpolator::runShuffling_()
 
 void PlanInterpolator::runTurning_()
 {
+  lastLateralTarget_ = targetPose_;
   customPlan_ = plans_("custom_lateral");
   customPlan_.name = "custom_lateral";
   supportPath_.reset(initPose_.pos(), initPose_.ori(), targetPose_.pos(), targetPose_.ori());

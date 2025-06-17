@@ -28,6 +28,8 @@
 #pragma once
 
 #include <mc_rbdyn/rpy_utils.h>
+#include <mc_rtc/Configuration.h>
+#include <mc_rtc/constants.h>
 
 #include <SpaceVecAlg/SpaceVecAlg>
 
@@ -127,6 +129,33 @@ struct SE2d
   inline Eigen::Vector3d vectorDegrees() const
   {
     return {x, y, mc_rtc::constants::toDeg(theta)};
+  }
+
+  // This will be called to load your object from a Configuration object
+  static SE2d fromConfiguration(const mc_rtc::Configuration & in)
+  {
+    SE2d res;
+    res.x = in("x", 0);
+    res.y = in("y", 0);
+    res.theta = in("theta", 0);
+    return res;
+  }
+
+  // This will be called save your object to a Configuration object
+  mc_rtc::Configuration toConfiguration(bool toDeg = false) const
+  {
+    mc_rtc::Configuration res;
+    res.add("x", x);
+    res.add("y", y);
+    if(toDeg)
+    {
+      res.add("theta", mc_rtc::constants::toDeg(theta));
+    }
+    else
+    {
+      res.add("theta", theta);
+    }
+    return res;
   }
 
 public:
