@@ -79,9 +79,22 @@ MainRobot: HRP4CR
 Timestep: 0.002
 Enabled: LIPMWalking
 ```
+### ROS 2
+#### You need 2 terminal windows.
+
+* RViz as mc_rtc control interface
+* Online Footstep Planner
+
+##### 1. Start RViz in a terminal :
+
+`` $ ros2 launch mc_rtc_ticker display.launch ``
+
+##### 2. Start the basic planner in a terminal:
+`` $ mc_rtc_ticker``
 
 
-### You need at least these 4 terminal windows.
+### ROS 1
+#### You need at least these 4 terminal windows.
 
 * ROS core
 * Choreonoid simulation
@@ -91,15 +104,15 @@ Enabled: LIPMWalking
 
 ***
 
-### process
+#### process
 
 
-#### 1. start ROS core in 1th terminal :
+##### 1. start ROS core in 1th terminal :
 
 ``$ roscore ``
 
 
-#### 2. Please go to the HRP4CR directory in openrtp system in 2nd terminal :
+##### 2. Please go to the HRP4CR directory in openrtp system in 2nd terminal :
 
 ``$ cd ~/openrtp/share/hrpsys/samples/HRP4CR``
 
@@ -124,14 +137,14 @@ _(Even clear-omninames.sh cannot help you, your hrpsys-humanoid is too old. plea
 
 
 
-#### 4. Start RViz in 3rd terminal :
+##### 4. Start RViz in 3rd terminal :
 
 `` $ roslaunch mc_rtc_ticker display.launch ``
 
 ![RViz panel](https://github.com/TsuruMasato/lipm_walking_controller/blob/rebase_stabilizer_ana/image/Screenshot%20from%202022-01-18%2018-28-46.png)
 
 
-#### 5. Plug your PS4 controller to a USB port, and start Online Footstep Planner in 4th terminal :
+##### 5. Plug your PS4 controller to a USB port, and start Online Footstep Planner in 4th terminal :
 
 `` $ roslaunch online_footstep_planner run_demo_in_sim_rebase.launch ``
 
@@ -173,3 +186,13 @@ _The stabilizer task becomes enable, and HRP4CR starts balancing._
 
 
 ##### Left Joystick leads the robot walking foward/backward/left/right, and Right Joystick makes him turn.
+
+___
+
+___
+
+## Trying with another robot
+
+After the integration of your new robot, you need to change the file `etc/LIPMWalking.in.yaml`.
+More precisely, you need to replace the name of the default robot `jvrc1` by your robot name.
+In addition, if you do not have access to the private repository `OnlineFootstepPlanner`, it is necessary to remove `ExternalFootstepPlannerPlugin` from the line `Plugins:`.
